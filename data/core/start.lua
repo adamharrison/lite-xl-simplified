@@ -76,10 +76,6 @@ io.lines = function(path)
   return old_io_lines(path)
 end
 
-bit32 = bit32 or require "core.bit"
-
-require "core.utf8string"
-
 -- Because AppImages change the working directory before running the executable,
 -- we need to change it back to the original one.
 -- https://github.com/AppImage/AppImageKit/issues/172
