@@ -99,7 +99,7 @@ static bool font_retrieve(lua_State* L, RenFont** fonts, int idx) {
     fonts[0] = *(RenFont**)luaL_checkudata(L, idx, API_TYPE_FONT);
     return false;
   }
-  int len = luaL_len(L, idx); len = len > FONT_FALLBACK_MAX ? FONT_FALLBACK_MAX : len;
+  int len = lua_rawlen(L, idx); len = len > FONT_FALLBACK_MAX ? FONT_FALLBACK_MAX : len;
   for (int i = 0; i < len; i++) {
     lua_rawgeti(L, idx, i+1);
     fonts[i] = *(RenFont**) luaL_checkudata(L, -1, API_TYPE_FONT);

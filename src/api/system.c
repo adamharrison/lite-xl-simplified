@@ -11,7 +11,6 @@
   #include <direct.h>
   #include <windows.h>
   #include <fileapi.h>
-  #include "../utfconv.h"
 #else
 
 #include <dirent.h>
@@ -132,6 +131,7 @@ static const char *get_key_name(const SDL_Event *e, char *buf) {
 }
 
 #ifdef _WIN32
+#define UTFCONV_ERROR_INVALID_CONVERSION "Input contains invalid byte sequences."
 static char *win32_error(DWORD rc) {
   LPSTR message;
   FormatMessage(
@@ -462,6 +462,52 @@ static int f_show_fatal_error(lua_State *L) {
 #endif
   return 0;
 }
+
+#if _WIN32
+static LPWSTR utfconv_utf8towc(const char *str) {
+  LPWSTR output;
+  int len;
+
+  // len includes \0
+  len = MultiByteToWideChar(CP_UTF8, 0, str, -1, NULL, 0);
+  if (len == 0)
+    return NULL;
+
+  output = (LPWSTR) malloc(sizeof(WCHAR) * len);
+  if (output == NULL)
+    return NULL;
+
+  len = MultiByteToWideChar(CP_UTF8, 0, str, -1, output, len);
+  if (len == 0) {
+    free(output);
+    return NULL;
+  }
+
+  return output;
+}
+
+static char *utfconv_wctoutf8(LPCWSTR str) {
+  char *output;
+  int len;
+
+  // len includes \0
+  len = WideCharToMultiByte(CP_UTF8, 0, str, -1, NULL, 0, NULL, NULL);
+  if (len == 0)
+    return NULL;
+
+  output = (char *) malloc(sizeof(char) * len);
+  if (output == NULL)
+    return NULL;
+
+  len = WideCharToMultiByte(CP_UTF8, 0, str, -1, output, len, NULL, NULL);
+  if (len == 0) {
+    free(output);
+    return NULL;
+  }
+
+  return output;
+}
+#endif
 
 
 // removes an empty directory

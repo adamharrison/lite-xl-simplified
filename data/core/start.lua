@@ -23,18 +23,21 @@ package.path = USERDIR .. '/?/init.lua;' .. package.path
 local dynamic_suffix = PLATFORM == "Mac OS X" and 'lib' or (PLATFORM == "Windows" and 'dll' or 'so')
 package.cpath = DATADIR .. '/?.' .. dynamic_suffix .. ";" .. USERDIR .. '/?.' .. dynamic_suffix
 package.native_plugins = {}
-package.searchers = { package.searchers[1], package.searchers[2], function(modname)
-  local path = package.searchpath(modname, package.cpath)
-  if not path then return nil end
-  return system.load_native_plugin, path
+local searchers = package.searchers and "searchers" or "loaders"
+package[searchers] = { package[searchers][1], package[searchers][2], function(modname)
+  local s, e = 1
+  while e < #package.cpath do
+    e = package.cpath:find(";", s) or #package.cpath
+    local path = package.cpath:sub(s, e):gsub("?", modname)
+    if system.get_file_info(path) then
+      return system.load_native_plugin, path
+    end
+  end
+  return nil
 end }
 
 table.pack = table.pack or pack or function(...) return {...} end
 table.unpack = table.unpack or unpack
-
-bit32 = bit32 or require "core.bit"
-
-require "core.utf8string"
 
 -- Because AppImages change the working directory before running the executable,
 -- we need to change it back to the original one.
