@@ -21,5 +21,13 @@ static const luaL_Reg libs[] = {
 void api_load_libs(lua_State *L) {
   for (int i = 0; libs[i].name; i++)
     luaL_requiref(L, libs[i].name, libs[i].func, 1);
+  #if LUA_VERSION_NUM <= 501
+  lua_newtable(L);
+  lua_pushcfunction(L, bit32_extract);
+  lua_setfield(L, -2, "extract");
+  lua_pushcfunction(L, bit32_replace);
+  lua_setfield(L, -2, "replace");
+  lua_setglobal(L, "bit32");
+  #endif
 }
 

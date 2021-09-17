@@ -1,160 +1,102 @@
-# Lite XL
+# Lite XL - Simplified
 
-[![CI]](https://github.com/lite-xl/lite-xl/actions/workflows/build.yml)
-[![Discord Badge Image]](https://discord.gg/RWzqC3nx7K)
+A lightweight text editor written in Lua, adapted from [lite-xl]. Makes it easier to build
+on different platforms if you're having trouble with meson.
 
-![screenshot-dark]
+Will always be rebased off upstream [lite-xl]; will never deviate far.
 
-A lightweight text editor written in Lua, adapted from [lite].
+Quickstart:
 
-* **[Get Lite XL]** — Download for Windows, Linux and Mac OS.
-* **[Get plugins]** — Add additional functionality, adapted for Lite XL.
-* **[Get color themes]** — Add additional colors themes.
+`git clone git@github.com:adamharrison/lite-xl-simplified.git --shallow-submodules --recurse-submodules && `.
 
-Please refer to our [website] for the user and developer documentation,
-including [build] instructions details. A quick build guide is described below.
+## Supporting Libraries
 
-Lite XL has support for high DPI display on Windows and Linux and,
-since 1.16.7 release, it supports **retina displays** on macOS.
+The 4 supporting libraries of lite are now git submodules. These **must** be pulled in with: 
+`git submodule update --remote --init --depth=1` after cloning the repository, or by the above clone command.
 
-Please note that Lite XL is compatible with lite for most plugins and all color themes.
-We provide a separate lite-xl-plugins repository for Lite XL, because in some cases
-some adaptations may be needed to make them work better with Lite XL.
-The repository with modified plugins is https://github.com/lite-xl/lite-xl-plugins.
+SDL2 should be installed as normal on Mac and Linux, or under msys. (You can use your
+package manager). Alternatively, you can supply your system libraries on the command line
+like so, to build from your system:
 
-The changes and differences between Lite XL and rxi/lite are listed in the
-[changelog].
+./build.sh `pkg-config lua5.4 freetype2 libpcre2-8 --cflags` `pkg-config lua5.4 freetype2 libpcre2-8 --libs`
 
-## Overview
+## Building
 
-Lite XL is derived from lite.
-It is a lightweight text editor written mostly in Lua — it aims to provide
-something practical, pretty, *small* and fast easy to modify and extend,
-or to use without doing either.
+**On Windows, if building using cmd.exe**, you should place `SDLmain.lib`, `SDL.lib`,
+`SDL.dll` into the main folder project directory, before running a build. You can retrieve
+these [here](https://www.libsdl.org/release/SDL2-devel-2.0.16-VC.zip). They're located under
+lib/x64.
 
-The aim of Lite XL compared to lite is to be more user friendly,
-improve the quality of font rendering, and reduce CPU usage.
+**To build**, simply run `build.sh`; this should function on Mac, Linux and MSYS command line.
+**If you're running on windows on the command line; you should use `build.cmd`.**
 
-## Customization
+If you desperately want better build times, you can speed up builds by specifying a `ccache`
+CC variable (e.g. `CC='ccache gcc' ./build.sh`). After the first build, these builds should
+be quite quick (on my machine, building from scratch moves from 1 second to about .1 seconds).
 
-Additional functionality can be added through plugins which are available in
-the [plugins repository] or in the [Lite XL plugins repository].
+## Cross Compiling
 
-Additional color themes can be found in the [colors repository].
-These color themes are bundled with all releases of Lite XL by default.
+### Linux to Windows
 
-## Quick Build Guide
+From Linux, to compile a windows executable, all you need to do is:
 
-If you compile Lite XL yourself, it is recommended to use the script
-`build-packages.sh`:
+`CC=i686-w64-mingw32-gcc AR=i686-w64-mingw32-gcc-ar SDL_CONFIG=/usr/local/cross-tools/i686-w64-mingw32/bin/sdl2-config ./build.sh`
 
-```sh
-bash build-packages.sh -h
+As long as you've compiled SDL with your mingw compiler (`sudo apt-get install mingw-w64`). You can compile SDL by going to the
+`lib/SDL` folder, and running:
+
+`CC=i686-w64-mingw32-gcc ./configure --host=i686-w64-mingw32 && make && sudo make install`
+
+### Linux to MacOS
+
+From linux, to compile a mac executable, you can use (OSXCross)[https://github.com/tpoechtrager/osxcross].
+
+`CC=o32-clang AR=o32-llvm-ar SDL_CONFIG=/usr/local/cross-tools/i386-apple-darwinXX/bin/sdl2-config ./build.sh`
+
+You can compile SDL by going to the `lib/SDL` folder and running:
+
+`CC=o32-clang ./configure --host=i386-apple-darwinXX && make && sudo make install`
+
+### Linux to Webassembly
+
+To compile to webassembly, install emscripten, and simply go to the main folder, and 
+
+`SDL_CONFIG="$EMSDK/upstream/emscripten/system/bin/sdl2-config" AR=emar CC=emcc ./build.sh -o index.html -s ASYNCIFY -s USE_SDL=2 --preload-file data -s INITIAL_MEMORY=134217728 --shell-file resources/lite-xl.html`
+
+### Linux to Android
+
+To compile to Android, see [here](https://developer.android.com/ndk/guides/other_build_systems). Call `sudo apt-get install android-tools-adb android-tools-fastboot`.
+Notably, download the [NDK](https://developer.android.com/ndk/downloads), find the ISA of the device you want to target. My phone is `ARMv7`, which is a 32-bit ARM architecture. 
+So, I'd set `$NDK` to the folder where the NDK was extracted and do the following:
+
 ```
-
-The script will run Meson and create a tar compressed archive with the application or,
-for Windows, a zip file. Lite XL can be easily installed
-by unpacking the archive in any directory of your choice.
-
-Otherwise the following is an example of basic commands if you want to customize
-the build:
-
-```sh
-meson setup --buildtype=release --prefix <prefix> build
-meson compile -C build
-DESTDIR="$(pwd)/lite-xl" meson install --skip-subprojects -C build
+AR=$NDK/toolchains/llvm/prebuilt/linux-x86_64/bin/llvm-ar CC=$NDK/toolchains/llvm/prebuilt/linux-x86_64/bin/armv7a-linux-androideabi31-clang ./build.sh
 ```
+  
 
-where `<prefix>` might be one of `/`, `/usr` or `/opt`, the default is `/`.
-To build a bundle application on macOS:
+You can compile SDL by going to the `lib/SDL` folder and running:
 
-```sh
-meson setup --buildtype=release --Dbundle=true --prefix / build
-meson compile -C build
-DESTDIR="$(pwd)/Lite XL.app" meson install --skip-subprojects -C build
 ```
-
-Please note that the package is relocatable to any prefix and the option prefix
-affects only the place where the application is actually installed.
-
-## Installing Prebuilt
-
-Head over to [releases](https://github.com/lite-xl/lite-xl/releases) and download the version for your operating system.
-
-### Linux
-
-Unzip the file and `cd` into the `lite-xl` directory:
-
-```sh
-tar -xzf <file>
-cd lite-xl
-```
-
-To run lite-xl without installing:
-```sh
-cd bin
-./lite-xl
-```
-
-To install lite-xl copy files over into appropriate directories:
-
-```sh
-mkdir -p $HOME/.local/bin && cp bin/lite-xl $HOME/.local/bin
-cp -r share $HOME/.local
-```
-
-If `$HOME/.local/bin` is not in PATH:
-
-```sh
-echo -e 'export PATH=$PATH:$HOME/.local/bin' >> $HOME/.bashrc
-```
-
-To get the icon to show up in app launcher:
-
-```sh
-xdg-desktop-menu forceupdate
-```
-
-You may need to logout and login again to see icon in app launcher.
-
-To uninstall just run:
-
-```sh
-rm -f $HOME/.local/bin/lite-xl
-rm -rf $HOME/.local/share/icons/hicolor/scalable/apps/lite-xl.svg \
-          $HOME/.local/share/applications/org.lite_xl.lite_xl.desktop \
-          $HOME/.local/share/metainfo/org.lite_xl.lite_xl.appdata.xml \
-          $HOME/.local/share/lite-xl
+export TOOLCHAIN=$NDK/toolchains/llvm/prebuilt/linux-x86_64
+export TARGET=armv7a-linux-androideabi
+export API=31
+export AR=$TOOLCHAIN/bin/llvm-ar
+export CC=$TOOLCHAIN/bin/$TARGET$API-clang
+export AS=$CC
+export CXX=$TOOLCHAIN/bin/$TARGET$API-clang++
+export LD=$TOOLCHAIN/bin/ld
+export RANLIB=$TOOLCHAIN/bin/llvm-ranlib
+export STRIP=$TOOLCHAIN/bin/llvm-strip
+./configure --host=$TARGET && make && sudo make install
 ```
 
 
-## Contributing
-
-Any additional functionality that can be added through a plugin should be done
-as a plugin, after which a pull request to the [Lite XL plugins repository] can be made.
-
-Pull requests to improve or modify the editor itself are welcome.
 
 ## Licenses
 
 This project is free software; you can redistribute it and/or modify it under
-the terms of the MIT license. See [LICENSE] for details.
+the terms of the MIT license. Dependencies are licensed under various open
+source licenses.  See [LICENSE] for details.
 
-See the [licenses] file for details on licenses used by the required dependencies.
-
-
-[CI]:                         https://github.com/lite-xl/lite-xl/actions/workflows/build.yml/badge.svg
-[Discord Badge Image]:        https://img.shields.io/discord/847122429742809208?label=discord&logo=discord
-[screenshot-dark]:            https://user-images.githubusercontent.com/433545/111063905-66943980-84b1-11eb-9040-3876f1133b20.png
-[lite]:                       https://github.com/rxi/lite
-[website]:                    https://lite-xl.com
-[build]:                      https://lite-xl.com/en/documentation/build/
-[Get Lite XL]:                https://github.com/lite-xl/lite-xl/releases/latest
-[Get plugins]:                https://github.com/lite-xl/lite-xl-plugins
-[Get color themes]:           https://github.com/lite-xl/lite-xl-colors
-[changelog]:                  https://github.com/lite-xl/lite-xl/blob/master/changelog.md
-[Lite XL plugins repository]: https://github.com/lite-xl/lite-xl-plugins
-[plugins repository]:         https://github.com/rxi/lite-plugins
-[colors repository]:          https://github.com/lite-xl/lite-xl-colors
+[lite-xl]:                    https://github.com/lite-xl/lite-xl
 [LICENSE]:                    LICENSE
-[licenses]:                   licenses/licenses.md
