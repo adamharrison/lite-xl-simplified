@@ -1,160 +1,88 @@
-# Lite XL
+# Lite XL - Simplified
 
-[![CI]](https://github.com/lite-xl/lite-xl/actions/workflows/build.yml)
-[![Discord Badge Image]](https://discord.gg/RWzqC3nx7K)
+A lightweight text editor written in Lua, adapted from [lite-xl]. Makes it easier to build
+on different platforms if you're having trouble with meson.
 
-![screenshot-dark]
+Will always be rebased off upstream [lite-xl]; will never deviate far.
 
-A lightweight text editor written in Lua, adapted from [lite].
+[Click here](https://adamharrison.github.io/lite-xl-simplified/) to try it out online!
 
-* **[Get Lite XL]** — Download for Windows, Linux and Mac OS.
-* **[Get plugins]** — Add additional functionality, adapted for Lite XL.
-* **[Get color themes]** — Add additional colors themes.
+## Quickstart
 
-Please refer to our [website] for the user and developer documentation,
-including [build] instructions details. A quick build guide is described below.
+If you have a C compiler, and `git`:
 
-Lite XL has support for high DPI display on Windows and Linux and,
-since 1.16.7 release, it supports **retina displays** on macOS.
+```
+git clone git@github.com:adamharrison/lite-xl-simplified.git --shallow-submodules \
+  --recurse-submodules && cd lite-xl-simplified && ./build.sh && ./lite-xl
+````
 
-Please note that Lite XL is compatible with lite for most plugins and all color themes.
-We provide a separate lite-xl-plugins repository for Lite XL, because in some cases
-some adaptations may be needed to make them work better with Lite XL.
-The repository with modified plugins is https://github.com/lite-xl/lite-xl-plugins.
+CI is enabled on this repository, so you can grab Windows and Linux builds from the 
+`continuous` [release page](https://github.com/adamharrison/lite-xl-simplified/releases/tag/continuous).
 
-The changes and differences between Lite XL and rxi/lite are listed in the
-[changelog].
+## Supporting Libraries
 
-## Overview
+The 4 supporting libraries of lite are now git submodules. These **must** be pulled in with: 
+`git submodule update --remote --init --depth=1` after cloning the repository, or by the above clone command.
 
-Lite XL is derived from [lite].
-It is a lightweight text editor written mostly in Lua — it aims to provide
-something practical, pretty, *small* and fast easy to modify and extend,
-or to use without doing either.
+The build tool will automatically build all necessary libraries.
 
-The aim of Lite XL compared to lite is to be more user friendly,
-improve the quality of font rendering, and reduce CPU usage.
+Alternatively, you can supply your system libraries on the command line like so, to build from your system:
 
-## Customization
-
-Additional functionality can be added through plugins which are available in
-the [plugins repository] or in the [Lite XL plugins repository].
-
-Additional color themes can be found in the [colors repository].
-These color themes are bundled with all releases of Lite XL by default.
-
-## Quick Build Guide
-
-If you compile Lite XL yourself, it is recommended to use the script
-`build-packages.sh`:
-
-```sh
-bash build-packages.sh -h
+```
+./build.sh `pkg-config lua5.4 freetype2 libpcre2-8 --cflags`\
+  `pkg-config lua5.4 freetype2 libpcre2-8 --libs` `sdl2-config --cflags` `sdl2-config --libs`.
 ```
 
-The script will run Meson and create a tar compressed archive with the application or,
-for Windows, a zip file. Lite XL can be easily installed
-by unpacking the archive in any directory of your choice.
+## Building
 
-Otherwise the following is an example of basic commands if you want to customize
-the build:
+### Linux, Mac, Windows/MSYS, FreeBSD
 
-```sh
-meson setup --buildtype=release --prefix <prefix> build
-meson compile -C build
-DESTDIR="$(pwd)/lite-xl" meson install --skip-subprojects -C build
+**To build**, simply run `build.sh`; this should function on Mac, Linux and MSYS command line.
+
+If you desperately want better build times, you can speed up builds by specifying a `ccache`
+`CC` variable (e.g. `CC='ccache gcc' ./build.sh`). After the first build, these builds should
+be quite quick (on my machine, building from scratch moves from 1 second to about .1 seconds).
+
+### Cross Compiling
+
+If you are cross compiling, between each build, you should run `./build.sh clean`.
+
+#### Linux to Windows
+
+From Linux, to compile a windows executable, all you need to do is make sure you have mingw64 (`sudo apt-get install mingw-w64`).
+
+```
+CC=i686-w64-mingw32-gcc AR=i686-w64-mingw32-gcc-ar SDL_CONFIGURE="--host=i686-w64-mingw32" ./build.sh
 ```
 
-where `<prefix>` might be one of `/`, `/usr` or `/opt`, the default is `/`.
-To build a bundle application on macOS:
+#### Linux to MacOS
 
-```sh
-meson setup --buildtype=release --Dbundle=true --prefix / build
-meson compile -C build
-DESTDIR="$(pwd)/Lite XL.app" meson install --skip-subprojects -C build
+From linux, to compile a mac executable, you can use (OSXCross)[https://github.com/tpoechtrager/cctools-port]. 
+This is complicated and a clusterfuck to install, because Mac is awful.
+
+```
+CC=clang AR=llvm-ar SDL_CONFIGURE="--host=i386-apple-darwin11" ./build.sh
 ```
 
-Please note that the package is relocatable to any prefix and the option prefix
-affects only the place where the application is actually installed.
+#### Linux to Webassembly
 
-## Installing Prebuilt
+To get the emscripten SDK:
 
-Head over to [releases](https://github.com/lite-xl/lite-xl/releases) and download the version for your operating system.
-
-### Linux
-
-Unzip the file and `cd` into the `lite-xl` directory:
-
-```sh
-tar -xzf <file>
-cd lite-xl
+```
+git clone https://github.com/emscripten-core/emsdk.git && cd emsdk && ./emsdk install latest && ./emsdk activate latest && source ./emsdk_env.sh && cd ..
 ```
 
-To run lite-xl without installing:
-```sh
-cd bin
-./lite-xl
+To compile to webassembly, do:
+
 ```
-
-To install lite-xl copy files over into appropriate directories:
-
-```sh
-mkdir -p $HOME/.local/bin && cp bin/lite-xl $HOME/.local/bin
-cp -r share $HOME/.local
+AR=emar CC=emcc ./build.sh -I`$EMSDK/upstream/emscripten/system/bin/sdl2-config --cflags` `$EMSDK/upstream/emscripten/system/bin/sdl2-config --libs` -o index.html -s ASYNCIFY -s USE_SDL=2 -s ASYNCIFY_WHITELIST="['main','SDL_WaitEvent','SDL_WaitEventTimeout','SDL_Delay','Emscripten_GLES_SwapWindow','SDL_UpdateWindowSurfaceRects','f_call','luaD_callnoyield','luaV_execute','luaD_precall','precallC','luaD_call','f_sleep','Emscripten_UpdateWindowFramebuffer','luaC_freeallobjects','GCTM','luaD_rawrunprotected','lua_close','close_state','f_end_frame','rencache_end_frame','ren_update_rects','renwin_update_rects','lua_pcallk','luaB_xpcall','dynCall_vii','f_wait_event']"  --preload-file data -s INITIAL_MEMORY=33554432 -s DISABLE_EXCEPTION_CATCHING=1 -s ALLOW_MEMORY_GROWTH=1 --shell-file resources/lite-xl.html
 ```
-
-If `$HOME/.local/bin` is not in PATH:
-
-```sh
-echo -e 'export PATH=$PATH:$HOME/.local/bin' >> $HOME/.bashrc
-```
-
-To get the icon to show up in app launcher:
-
-```sh
-xdg-desktop-menu forceupdate
-```
-
-You may need to logout and login again to see icon in app launcher.
-
-To uninstall just run:
-
-```sh
-rm -f $HOME/.local/bin/lite-xl
-rm -rf $HOME/.local/share/icons/hicolor/scalable/apps/lite-xl.svg \
-          $HOME/.local/share/applications/org.lite_xl.lite_xl.desktop \
-          $HOME/.local/share/metainfo/org.lite_xl.lite_xl.appdata.xml \
-          $HOME/.local/share/lite-xl
-```
-
-
-## Contributing
-
-Any additional functionality that can be added through a plugin should be done
-as a plugin, after which a pull request to the [Lite XL plugins repository] can be made.
-
-Pull requests to improve or modify the editor itself are welcome.
 
 ## Licenses
 
 This project is free software; you can redistribute it and/or modify it under
-the terms of the MIT license. See [LICENSE] for details.
+the terms of the MIT license. Dependencies are licensed under various open
+source licenses.  See [LICENSE] for details.
 
-See the [licenses] file for details on licenses used by the required dependencies.
-
-
-[CI]:                         https://github.com/lite-xl/lite-xl/actions/workflows/build.yml/badge.svg
-[Discord Badge Image]:        https://img.shields.io/discord/847122429742809208?label=discord&logo=discord
-[screenshot-dark]:            https://user-images.githubusercontent.com/433545/111063905-66943980-84b1-11eb-9040-3876f1133b20.png
-[lite]:                       https://github.com/rxi/lite
-[website]:                    https://lite-xl.com
-[build]:                      https://lite-xl.com/en/documentation/build
-[Get Lite XL]:                https://github.com/lite-xl/lite-xl/releases/latest
-[Get plugins]:                https://github.com/lite-xl/lite-xl-plugins
-[Get color themes]:           https://github.com/lite-xl/lite-xl-colors
-[changelog]:                  https://github.com/lite-xl/lite-xl/blob/master/changelog.md
-[Lite XL plugins repository]: https://github.com/lite-xl/lite-xl-plugins
-[plugins repository]:         https://github.com/rxi/lite-plugins
-[colors repository]:          https://github.com/lite-xl/lite-xl-colors
+[lite-xl]:                    https://github.com/lite-xl/lite-xl
 [LICENSE]:                    LICENSE
-[licenses]:                   licenses/licenses.md
