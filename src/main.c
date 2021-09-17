@@ -66,20 +66,23 @@ static void init_window_icon(void) {
 }
 
 #ifdef _WIN32
-#define LITE_OS_HOME "USERPROFILE"
-#define LITE_PATHSEP_PATTERN "\\\\"
-#define LITE_NONPATHSEP_PATTERN "[^\\\\]+"
+  #define LITE_OS_HOME "USERPROFILE"
+  #define LITE_PATHSEP_PATTERN "\\\\"
+  #define LITE_NONPATHSEP_PATTERN "[^\\\\]+"
 #else
-#define LITE_OS_HOME "HOME"
-#define LITE_PATHSEP_PATTERN "/"
-#define LITE_NONPATHSEP_PATTERN "[^/]+"
+  #define LITE_OS_HOME "HOME"
+  #define LITE_PATHSEP_PATTERN "/"
+  #define LITE_NONPATHSEP_PATTERN "[^/]+"
+#endif
+#ifndef LITE_VERSION
+  #define LITE_VERSION "Unknown"
 #endif
 
 #ifdef __APPLE__
-void enable_momentum_scroll();
-#ifdef MACOS_USE_BUNDLE
-void set_macos_bundle_resources(lua_State *L);
-#endif
+  void enable_momentum_scroll();
+  #ifdef MACOS_USE_BUNDLE
+    void set_macos_bundle_resources(lua_State *L);
+  #endif
 #endif
 
 #ifndef LITE_ARCH_TUPLE
@@ -115,7 +118,7 @@ int main(int argc, char **argv) {
   HINSTANCE lib = LoadLibrary("user32.dll");
   int (*SetProcessDPIAware)() = (void*) GetProcAddress(lib, "SetProcessDPIAware");
   SetProcessDPIAware();
-#else
+#elif !__EMSCRIPTEN__
   signal(SIGPIPE, SIG_IGN);
 #endif
 
@@ -200,6 +203,7 @@ init_lua:
   const char *init_lite_code = \
     "local core\n"
     "xpcall(function()\n"
+    "  VERSION = '" LITE_VERSION "'\n"
     "  HOME = os.getenv('" LITE_OS_HOME "')\n"
     "  local exedir = EXEFILE:match('^(.*)" LITE_PATHSEP_PATTERN LITE_NONPATHSEP_PATTERN "$')\n"
     "  local prefix = exedir:match('^(.*)" LITE_PATHSEP_PATTERN "bin$')\n"
