@@ -170,7 +170,20 @@ static void push_win32_error(lua_State *L, DWORD rc) {
 }
 #endif
 
+#ifdef __EMSCRIPTEN__
+  #include <emscripten.h>
+  static int win_x, win_y;
+  EM_JS(int, get_canvas_width, (), { return canvas.width; });
+  EM_JS(int, get_canvas_height, (), { return canvas.height; });
+#endif
+
 static int f_poll_event(lua_State *L) {
+  #ifdef __EMSCRIPTEN__
+  if (win_x != get_canvas_width() || win_y != get_canvas_height()) {
+    win_x = get_canvas_width(); win_y = get_canvas_height();
+    SDL_SetWindowSize(window, win_x, win_y);
+  }
+  #endif
   char buf[16];
   int mx, my, w, h;
   SDL_Event e;
@@ -955,7 +968,6 @@ static void* api_require(const char* symbol) {
     #else
     P(newuserdata), P(setuservalue), P(getuservalue)
     #endif
-
   };
   for (size_t i = 0; i < sizeof(nodes) / sizeof(lua_function_node); ++i) {
     if (strcmp(nodes[i].symbol, symbol) == 0)
