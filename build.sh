@@ -59,7 +59,7 @@ if [ ! -f $LNAME ] && { [ ! -z "$LLSRCS" ]; }; then
   done
   wait && $AR -r -s $LNAME *.o && rm -f *.o
 fi
-[[  ! -z "$LLSRCS" ]] && LDFLAGS="-L. -llite"
+[[  ! -z "$LLSRCS" ]] && LDFLAGS=" $LDFLAGS -L. -llite"
 
 # Main executable; set to -O3 if O or debugging not specified.
 [[ " $CFLAGS " != *" -O"* ]] && [[ " $CFLAGS " != *" -g "* ]] && CFLAGS="$CFLAGS -O3"
