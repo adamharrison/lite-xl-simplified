@@ -17,17 +17,13 @@ fi
 
 # Compile SDL separately, because it's the only complicated module.
 if [[ "$LDFLAGS" != *"-lSDL"* ]]; then
-  [[ ! -e "lib/SDL/include" ]] && echo "Make sure you've cloned your submodules. (git submodule update --init --depth=1)" && exit -1
+  [[ ! -e "lib/SDL/include" ]] && echo "Make sure you've cloned submodules. (git submodule update --init --depth=1)" && exit -1
   [[ ! -e "lib/SDL/build" ]] && cd lib/SDL && mkdir -p build && cd build && CC=$CC ../configure $SDL_CONFIGURE --disable-audio --disable-joystick --disable-haptic && make -j $JOBS && cd ../../..
-  LDFLAGS=" $LDFLAGS -Llib/SDL/build/build/.libs -l:libSDL2.a"
-  [[ $OSTYPE == 'msys'* ]] && LDFLAGS=" $LDFLAGS -lmingw32 -l:libSDL2main.a -mwindows"
+  LDFLAGS=" $LDFLAGS -Llib/SDL/build/build/.libs -lSDL2"
+  [[ $OSTYPE == 'msys'* ]] && LDFLAGS=" $LDFLAGS -lmingw32 -lSDL2main -mwindows"
   CFLAGS=" $CFLAGS -Ilib/SDL/include"
 fi
 # Supporting library. Only compile bits that we're not linking explicitly against, allowing for system linking of libraries.
-if [[ "$LDFLAGS" != *"-llua"* ]]; then
-  CFLAGS="$CFLAGS -Ilib/lua"
-  LLSRCS="$LLSRCS lib/lua/onelua.c"
-fi
 if [[ "$LDFLAGS" != *"-lpcre"* ]]; then
   cp -f lib/pcre2/src/config.h.generic lib/pcre2/src/config.h
   cp -f lib/pcre2/src/pcre2.h.generic lib/pcre2/src/pcre2.h
@@ -52,11 +48,16 @@ if [[ "$LDFLAGS" != *"-lfreetype"* ]]; then
     lib/freetype/src/smooth/smooth.c lib/freetype/src/autofit/autofit.c lib/freetype/src/psnames/psnames.c lib/freetype/src/pshinter/pshinter.c lib/freetype/src/cff/cff.c \
     lib/freetype/src/gzip/ftgzip.c lib/freetype/src/base/ftbitmap.c"
 fi
+if [[ "$LDFLAGS" != *"-llua"* ]]; then
+  CFLAGS="$CFLAGS -Ilib/lua"
+  LLFLAGS="$LLFLAGS -DMAKE_LIB=1"
+  LLSRCS="$LLSRCS lib/lua/onelua.c"
+fi
 if [ ! -f $LNAME ] && { [ ! -z "$LLSRCS" ]; }; then
   echo "Building $LNAME... (Can take a moment, but only needs to be done once)"
   for SRC in $LLSRCS; do 
     ((i=i%JOBS)); ((i++==0)) && wait # Parallelize the build.
-    $CC -O3 -c -DMAKE_LIB=1 $SRC $LLFLAGS &
+    $CC -O3 -c $SRC $LLFLAGS &
   done
   wait && $AR -r -s $LNAME *.o && rm -f *.o
 fi
@@ -78,5 +79,4 @@ for SRC in $SRCS; do
   ((i=i%JOBS)); ((i++==0)) && wait # Parallelize the build.
   $CC $SRC -c $CFLAGS -o $SRC.o &
 done
-wait && $CC src/*.o src/api/*.o -o $BIN $LDFLAGS $@ && rm -f src/*.o src/api/*.o
-echo "Done."
+wait && $CC src/*.o src/api/*.o -o $BIN $LDFLAGS $@ && rm -f src/*.o src/api/*.o && echo "Done."
