@@ -13,12 +13,12 @@ else
 fi
 : ${JOBS=12}
 
-[[ "$@" == "clean" ]] && rm -rf lib/SDL/build liblite.* $BIN && exit 0
+[[ "$@" == "clean" ]] && rm -rf lib/SDL/build liblite.* *.o $BIN && exit 0
 
 # Compile SDL separately, because it's the only complicated module.
 if [[ "$LDFLAGS" != *"-lSDL"* ]]; then
   [[ ! -e "lib/SDL/include" ]] && echo "Make sure you've cloned your submodules. (git submodule update --init --depth=1)" && exit -1
-  [[ ! -e "lib/SDL/build" ]] && cd lib/SDL && mkdir -p build && cd build && CC=$CC ../configure $HOST --disable-audio --disable-joystick && make -j $JOBS && cd ../../..
+  [[ ! -e "lib/SDL/build" ]] && cd lib/SDL && mkdir -p build && cd build && CC=$CC ../configure $SDL_CONFIGURE --disable-audio --disable-joystick --disable-haptic && make -j $JOBS && cd ../../..
   LDFLAGS=" $LDFLAGS -Llib/SDL/build/build/.libs -l:libSDL2.a"
   CFLAGS=" $CFLAGS -Ilib/SDL/include"
 fi
@@ -57,9 +57,7 @@ if [ ! -f $LNAME ] && { [ ! -z "$LLSRCS" ]; }; then
     ((i=i%JOBS)); ((i++==0)) && wait # Parallelize the build.
     $CC -O3 -c $SRC $LLFLAGS &
   done
-  wait
-  $AR -r -s $LNAME *.o
-  rm -f *.o
+  wait && $AR -r -s $LNAME *.o && rm -f *.o
 fi
 if [  ! -z "$LLSRCS" ]; then
   FLAGS="$FLAGS -L. -llite"
@@ -80,8 +78,5 @@ for SRC in $SRCS; do
   ((i=i%JOBS)); ((i++==0)) && wait # Parallelize the build.
   $CC $SRC -c $FLAGS $CFLAGS -o $SRC.o &
 done
-wait
-echo "$CC src/*.o src/api/*.o -o $BIN $LDFLAGS $FLAGS"
-$CC src/*.o src/api/*.o -o $BIN $LDFLAGS $FLAGS
-rm -f src/*.o src/api/*.o
+wait && $CC src/*.o src/api/*.o -o $BIN $LDFLAGS $FLAGS && rm -f src/*.o src/api/*.o
 echo "Done."
