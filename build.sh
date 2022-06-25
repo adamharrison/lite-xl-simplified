@@ -19,8 +19,8 @@ fi
 if [[ "$LDFLAGS" != *"-lSDL"* ]]; then
   [[ ! -e "lib/SDL/include" ]] && echo "Make sure you've cloned submodules. (git submodule update --init --depth=1)" && exit -1
   [[ ! -e "lib/SDL/build" ]] && cd lib/SDL && mkdir -p build && cd build && CC=$CC ../configure $SDL_CONFIGURE --disable-audio --disable-joystick --disable-haptic && make -j $JOBS && cd ../../..
-  LDFLAGS=" $LDFLAGS -Llib/SDL/build/build/.libs -lSDL2"
-  [[ $OSTYPE == 'msys'* ]] && LDFLAGS=" $LDFLAGS -lmingw32 -lSDL2main -mwindows"
+  LDFLAGS=" $LDFLAGS -Llib/SDL/build/build/.libs -l:libSDL2.a"
+  [[ $OSTYPE == 'msys'* ]] && LDFLAGS=" $LDFLAGS -lmingw32 -l:libSDL2main.a -mwindows"
   CFLAGS=" $CFLAGS -Ilib/SDL/include"
 fi
 # Supporting library. Only compile bits that we're not linking explicitly against, allowing for system linking of libraries.
