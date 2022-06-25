@@ -5,7 +5,7 @@ on different platforms if you're having trouble with meson.
 
 Will always be rebased off upstream [lite-xl]; will never deviate far.
 
-Quickstart:
+Quickstart, if you have a C compiler.
 
 ```
 git clone git@github.com:adamharrison/lite-xl-simplified.git --shallow-submodules --recurse-submodules && cd lite-xl-simplified && ./build.sh && ./lite-xl
