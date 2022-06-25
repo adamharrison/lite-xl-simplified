@@ -7,6 +7,7 @@ LDFLAGS=" $LDFLAGS -lm -static-libgcc"
 if [[ $OSTYPE == 'msys' ]]; then
   : ${BIN=lite-xl.exe}
   : ${LNAME=liblite.lib}
+  LDFLAGS=" $LDFLAGS -lgdi32 -lwinm -loleaut32 -lole32 -limm32 -lversion -lsetupapi"
 else
   : ${BIN=lite-xl}
   : ${LNAME=liblite.a}
@@ -20,12 +21,13 @@ if [[ "$LDFLAGS" != *"-lSDL"* ]]; then
   [[ ! -e "lib/SDL/include" ]] && echo "Make sure you've cloned your submodules. (git submodule update --init --depth=1)" && exit -1
   [[ ! -e "lib/SDL/build" ]] && cd lib/SDL && mkdir -p build && cd build && CC=$CC ../configure $SDL_CONFIGURE --disable-audio --disable-joystick --disable-haptic && make -j $JOBS && cd ../../..
   LDFLAGS=" $LDFLAGS -Llib/SDL/build/build/.libs -l:libSDL2.a"
+  [[ $OSTYPE == 'msys'* ]] && LDFLAGS=" $LDFLAGS -l:libSDL2main.a -mwindows"
   CFLAGS=" $CFLAGS -Ilib/SDL/include"
 fi
 # Supporting library. Only compile bits that we're not linking explicitly against, allowing for system linking of libraries.
 if [[ "$LDFLAGS" != *"-llua"* ]]; then
   CFLAGS="$CFLAGS -Ilib/lua"
-  LLSRCS="$LLSRCS lib/lua/l*.c"
+  LLSRCS="$LLSRCS lib/lua/onelua.c"
 fi
 if [[ "$LDFLAGS" != *"-lpcre"* ]]; then
   cp -f lib/pcre2/src/config.h.generic lib/pcre2/src/config.h
@@ -55,7 +57,7 @@ if [ ! -f $LNAME ] && { [ ! -z "$LLSRCS" ]; }; then
   echo "Building $LNAME... (Can take a moment, but only needs to be done once)"
   for SRC in $LLSRCS; do 
     ((i=i%JOBS)); ((i++==0)) && wait # Parallelize the build.
-    $CC -O3 -c $SRC $LLFLAGS &
+    $CC -O3 -c -DMAKE_LIB=1 $SRC $LLFLAGS &
   done
   wait && $AR -r -s $LNAME *.o && rm -f *.o
 fi
@@ -70,6 +72,7 @@ if [[ $OSTYPE == 'darwin'* ]]; then
   SRCS=$SRCS src/*.m
 fi
 [[ $OSTYPE != 'msys'* ]] && LDFLAGS=" $LDFLAGS -ldl -pthread"
+[[ $OSTYPE == 'msys'* ]] && LDFLAGS=" $LDFLAGS -lwinmm -lgdi32 -loleaut32- -lole32 -limm32 -lversion -lsetupapi"
 
 echo "Building $BIN..."
 for SRC in $SRCS; do 
