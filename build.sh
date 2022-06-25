@@ -3,7 +3,7 @@
 : ${CC=gcc}
 : ${AR=ar}
 CFLAGS=" $CFLAGS $@ -Isrc -fno-strict-aliasing"
-LDFLAGS=" $LDFLAGS $@ -lm -static-libgcc"
+LDFLAGS=" $LDFLAGS -lm -static-libgcc"
 if [[ $OSTYPE == 'msys' ]]; then
   : ${BIN=lite-xl.exe}
   : ${LNAME=liblite.lib}
@@ -59,9 +59,7 @@ if [ ! -f $LNAME ] && { [ ! -z "$LLSRCS" ]; }; then
   done
   wait && $AR -r -s $LNAME *.o && rm -f *.o
 fi
-if [  ! -z "$LLSRCS" ]; then
-  FLAGS="$FLAGS -L. -llite"
-fi
+[[  ! -z "$LLSRCS" ]] && LDFLAGS="-L. -llite"
 
 # Main executable; set to -O3 if O or debugging not specified.
 [[ " $CFLAGS " != *" -O"* ]] && [[ " $CFLAGS " != *" -g "* ]] && CFLAGS="$CFLAGS -O3"
@@ -76,7 +74,7 @@ fi
 echo "Building $BIN..."
 for SRC in $SRCS; do 
   ((i=i%JOBS)); ((i++==0)) && wait # Parallelize the build.
-  $CC $SRC -c $FLAGS $CFLAGS -o $SRC.o &
+  $CC $SRC -c $CFLAGS -o $SRC.o &
 done
-wait && $CC src/*.o src/api/*.o -o $BIN $LDFLAGS $FLAGS && rm -f src/*.o src/api/*.o
+wait && $CC src/*.o src/api/*.o -o $BIN $LDFLAGS $@ && rm -f src/*.o src/api/*.o
 echo "Done."
