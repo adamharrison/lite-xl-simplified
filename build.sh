@@ -2,6 +2,8 @@
 
 : ${CC=gcc}
 : ${AR=ar}
+CFLAGS=" $CFLAGS $@ -Isrc -fno-strict-aliasing"
+LDFLAGS=" $LDFLAGS $@ -lm -static-libgcc"
 if [[ $OSTYPE == 'msys' ]]; then
   : ${BIN=lite-xl.exe}
   : ${LNAME=liblite.lib}
@@ -9,15 +11,15 @@ else
   : ${BIN=lite-xl}
   : ${LNAME=liblite.a}
 fi
-CFLAGS=" $CFLAGS $@ -Isrc -fno-strict-aliasing"
-LDFLAGS=" $LDFLAGS $@ -lm -static-libgcc"
 : ${JOBS=12}
+
+[[ "$@" == "clean" ]] && rm -rf lib/SDL/build liblite.* $BIN && exit 0
 
 # Compile SDL separately, because it's the only complicated module.
 if [[ "$LDFLAGS" != *"-lSDL"* ]]; then
   [[ ! -e "lib/SDL/include" ]] && echo "Make sure you've cloned your submodules. (git submodule update --init --depth=1)" && exit -1
-  [[ ! -e "lib/SDL/build" ]] && cd lib/SDL && mkdir -p build && cd build && ../configure && make -j $JOBS && cd ../..
-  LDFLAGS=" $LDFLAGS -Llib/SDL/build/.libs -lSDL2"
+  [[ ! -e "lib/SDL/build" ]] && cd lib/SDL && mkdir -p build && cd build && CC=$CC ../configure $HOST --disable-audio --disable-joystick && make -j $JOBS && cd ../../..
+  LDFLAGS=" $LDFLAGS -Llib/SDL/build/build/.libs -l:libSDL2.a"
   CFLAGS=" $CFLAGS -Ilib/SDL/include"
 fi
 # Supporting library. Only compile bits that we're not linking explicitly against, allowing for system linking of libraries.
@@ -71,6 +73,7 @@ if [[ $OSTYPE == 'darwin'* ]]; then
   LDFLAGS="$LDFLAGS -Framework CoreServices -Framework Foundation"
   SRCS=$SRCS src/*.m
 fi
+[[ $OSTYPE != 'msys'* ]] && LDFLAGS=" $LDFLAGS -ldl -pthread"
 
 echo "Building $BIN..."
 for SRC in $SRCS; do 
@@ -78,6 +81,7 @@ for SRC in $SRCS; do
   $CC $SRC -c $FLAGS $CFLAGS -o $SRC.o &
 done
 wait
+echo "$CC src/*.o src/api/*.o -o $BIN $LDFLAGS $FLAGS"
 $CC src/*.o src/api/*.o -o $BIN $LDFLAGS $FLAGS
 rm -f src/*.o src/api/*.o
 echo "Done."
