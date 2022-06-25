@@ -57,11 +57,11 @@ struct dirmonitor {
   }
 #endif
 
-int get_changes_dirmonitor(struct dirmonitor* monitor, char* buffer, int length) {
+int get_changes_dirmonitor(struct dirmonitor* monitor, char* buffer, int buffer_size) {
   #if DIRMONITOR_BACKEND_INOTIFY
     struct pollfd fds[2] = { { .fd = monitor->fd, .events = POLLIN | POLLERR, .revents = 0 }, { .fd = monitor->sig[0], .events = POLLIN | POLLERR, .revents = 0 } };
     poll(fds, 2, -1);
-    return read(monitor->fd, buffer, length);
+    return read(monitor->fd, buffer, buffer_size);
   #elif DIRMONITOR_BACKEND_WIN32
     HANDLE handle = monitor->handle;
     if (handle && handle != INVALID_HANDLE_VALUE) {
@@ -84,9 +84,9 @@ int get_changes_dirmonitor(struct dirmonitor* monitor, char* buffer, int length)
 }
 
 
-int translate_changes_dirmonitor(struct dirmonitor* monitor, char* buffer, int length, int (*change_callback)(int, const char*, void*), void* data) {
+int translate_changes_dirmonitor(struct dirmonitor* monitor, char* buffer, int buffer_size, int (*change_callback)(int, const char*, void*), void* data) {
   #if DIRMONITOR_BACKEND_INOTIFY
-    for (struct inotify_event* info = (struct inotify_event*)buffer; (char*)info < buffer + length; info = (struct inotify_event*)((char*)info + sizeof(struct inotify_event)))
+    for (struct inotify_event* info = (struct inotify_event*)buffer; (char*)info < buffer + buffer_size; info = (struct inotify_event*)((char*)info + sizeof(struct inotify_event)))
       change_callback(info->wd, NULL, data);
   #elif DIRMONITOR_BACKEND_WIN32
     for (FILE_NOTIFY_INFORMATION* info = (FILE_NOTIFY_INFORMATION*)buffer; (char*)info < buffer + buffer_size; info = (FILE_NOTIFY_INFORMATION*)(((char*)info) + info->NextEntryOffset)) {
