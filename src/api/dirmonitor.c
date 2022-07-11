@@ -205,12 +205,12 @@ static int f_dirmonitor_gc(lua_State* L) {
 
 static int f_dirmonitor_watch(lua_State *L) {
   struct dirmonitor* monitor = luaL_checkudata(L, 1, API_TYPE_DIRMONITOR);
-  lua_pushnumber(L, add_dirmonitor(monitor->internal, luaL_checkstring(L, 2)));
+  lua_pushnumber(L, add_dirmonitor(monitor, luaL_checkstring(L, 2)));
   #if !DIRMONITOR_BACKEND_DUMMY
   if (!monitor->thread)
     monitor->thread = SDL_CreateThread(dirmonitor_check_thread, "dirmonitor_check_thread", monitor);
   #endif
-  lua_pushnumber(L, add_dirmonitor(((struct dirmonitor*)luaL_checkudata(L, 1, API_TYPE_DIRMONITOR)), luaL_checkstring(L, 2)));
+  lua_pushnumber(L, add_dirmonitor(monitor, luaL_checkstring(L, 2)));
   return 1;
 }
 
