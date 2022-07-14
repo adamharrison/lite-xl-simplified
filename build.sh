@@ -9,14 +9,16 @@
 CFLAGS=" $CFLAGS $@ -Isrc -fno-strict-aliasing"
 LDFLAGS=" $LDFLAGS -lm -static-libgcc"
 
-[[ "$@" == "clean" ]] && rm -rf lib/SDL/build liblite.* *.o $BIN && exit 0
+[[ "$@" == "clean" ]] && rm -rf lib/SDL/build liblite.a *.o $BIN && exit 0
+
+[[ $OSTYPE == 'msys'* || $CC == *'mingw'* ]] && CFLAGS="$CFLAGS -DNTDDI_VERSION=NTDDI_VISTA -D_WIN32_WINNT=_WIN32_WINNT_VISTA"
 
 # Compile SDL separately, because it's the only complicated module.
 if [[ "$LDFLAGS" != *"-lSDL"* ]]; then
-  [[ ! -e "lib/SDL/include" ]] && echo "Make sure you've cloned submodules. (git submodule update --init --depth=1)" && exit -1
-  [[ ! -e "lib/SDL/build" ]] && cd lib/SDL && mkdir -p build && cd build && CC=$CC ../configure $SDL_CONFIGURE --disable-audio --disable-joystick --disable-haptic && make -j $JOBS && cd ../../..
+  [ ! -e "lib/SDL/include" ] && echo "Make sure you've cloned submodules. (git submodule update --init --depth=1)" && exit -1
+  [ ! -e "lib/SDL/build" ] && cd lib/SDL && mkdir -p build && cd build && CC=$CC ../configure $SDL_CONFIGURE --disable-audio --disable-joystick --disable-haptic -- && make -j $JOBS && cd ../../..
   LDFLAGS=" $LDFLAGS -Llib/SDL/build/build/.libs -l:libSDL2.a"
-  [[ $OSTYPE == 'msys'* || $CC == *'mingw'* ]] && LDFLAGS=" $LDFLAGS -lmingw32 -l:libSDL2main.a -mwindows"
+  [[ $OSTYPE == 'msys'* || $CC == *'mingw'* ]] && LDFLAGS=" $LDFLAGS -lmingw32 -l:libSDL2main.a"
   CFLAGS=" $CFLAGS -Ilib/SDL/include"
 fi
 # Supporting library. Only compile bits that we're not linking explicitly against, allowing for system linking of libraries.
@@ -25,7 +27,7 @@ if [[ "$LDFLAGS" != *"-lpcre"* ]]; then
   cp -f lib/pcre2/src/pcre2.h.generic lib/pcre2/src/pcre2.h
   cp -f lib/pcre2/src/pcre2_chartables.c.dist lib/pcre2/src/pcre2_chartables.c
   CFLAGS="$CFLAGS -Ilib/pcre2/src -DPCRE2_STATIC"
-  LLFLAGS="$LLFLAGS -Ilib/pcre2/src -DHAVE_CONFIG_H -DPCRE2_CODE_UNIT_WIDTH=8"
+  LLFLAGS="$LLFLAGS -Ilib/pcre2/src -DHAVE_CONFIG_H -DPCRE2_CODE_UNIT_WIDTH=8 -DPCRE2_STATIC -DSUPPORT_UNICODE -DSUPPORT_UTF8"
   LLSRCS="$LLSRCS lib/pcre2/src/pcre2_substitute.c lib/pcre2/src/pcre2_convert.c lib/pcre2/src/pcre2_dfa_match.c lib/pcre2/src/pcre2_find_bracket.c\
     lib/pcre2/src/pcre2_auto_possess.c lib/pcre2/src/pcre2_substring.c lib/pcre2/src/pcre2_match_data.c lib/pcre2/src/pcre2_xclass.c lib/pcre2/src/pcre2_study.c\
     lib/pcre2/src/pcre2_ucd.c lib/pcre2/src/pcre2_maketables.c lib/pcre2/src/pcre2_compile.c lib/pcre2/src/pcre2_match.c lib/pcre2/src/pcre2_context.c\
@@ -44,11 +46,8 @@ if [[ "$LDFLAGS" != *"-lfreetype"* ]]; then
     lib/freetype/src/smooth/smooth.c lib/freetype/src/autofit/autofit.c lib/freetype/src/psnames/psnames.c lib/freetype/src/pshinter/pshinter.c lib/freetype/src/cff/cff.c \
     lib/freetype/src/gzip/ftgzip.c lib/freetype/src/base/ftbitmap.c"
 fi
-if [[ "$LDFLAGS" != *"-llua"* ]]; then
-  CFLAGS="$CFLAGS -Ilib/lua"
-  LLFLAGS="$LLFLAGS -DMAKE_LIB=1"
-  LLSRCS="$LLSRCS lib/lua/onelua.c"
-fi
+[ "$LDFLAGS" != *"-llua"* ] && CFLAGS="$CFLAGS -Ilib/lua" && LLFLAGS="$LLFLAGS -DMAKE_LIB=1" && LLSRCS="$LLSRCS lib/lua/onelua.c"
+
 if [ ! -f $LNAME ] && { [ ! -z "$LLSRCS" ]; }; then
   echo "Building $LNAME... (Can take a moment, but only needs to be done once)"
   for SRC in $LLSRCS; do 
@@ -57,10 +56,10 @@ if [ ! -f $LNAME ] && { [ ! -z "$LLSRCS" ]; }; then
   done
   wait && $AR -r -s $LNAME *.o && rm -f *.o
 fi
-[[  ! -z "$LLSRCS" ]] && LDFLAGS=" $LDFLAGS -L. -llite"
+[  ! -z "$LLSRCS" ] && LDFLAGS=" $LDFLAGS -L. -llite"
 
-# Main executable; set to -O3 if O or debugging not specified.
-[[ " $CFLAGS " != *" -O"* ]] && [[ " $CFLAGS " != *" -g "* ]] && CFLAGS="$CFLAGS -O3"
+# Main executable; set to -O3 -s if O or debugging not specified.
+[[ " $CFLAGS " != *" -O"* ]] && [[ " $CFLAGS " != *" -g "* ]] && CFLAGS="$CFLAGS -O3" && LDFLAGS="$LDFLAGS -s"
 SRCS="src/*.c src/api/*.c"
 if [[ $OSTYPE == 'darwin'* ]]; then
   CFLAGS="$CFLAGS -DLITE_USE_SDL_RENDERER"
@@ -68,7 +67,7 @@ if [[ $OSTYPE == 'darwin'* ]]; then
   SRCS=$SRCS src/*.m
 fi
 [[ $OSTYPE != 'msys'* && $CC != *'mingw'* ]] && LDFLAGS=" $LDFLAGS -ldl -pthread"
-[[ $OSTYPE == 'msys'* || $CC == *'mingw'* ]] && LDFLAGS=" $LDFLAGS -lwinmm -lgdi32 -loleaut32 -lole32 -limm32 -lversion -lsetupapi"
+[[ $OSTYPE == 'msys'* || $CC == *'mingw'* ]] && LDFLAGS="resources/icons/icon.res $LDFLAGS -lwinmm -lgdi32 -loleaut32 -lole32 -limm32 -lversion -lsetupapi -mwindows"
 
 echo "Building $BIN..."
 for SRC in $SRCS; do 

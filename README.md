@@ -26,7 +26,16 @@ Alternatively, you can supply your system libraries on the command line like so,
 
 ## Building
 
+### Linux, Mac, Windows/MSYS
+
 **To build**, simply run `build.sh`; this should function on Mac, Linux and MSYS command line.
+
+If you desperately want better build times, you can speed up builds by specifying a `ccache`
+`CC` variable (e.g. `CC='ccache gcc' ./build.sh`). After the first build, these builds should
+be quite quick (on my machine, building from scratch moves from 1 second to about .1 seconds).
+
+### Windows/cmd.exe
+
 **If you're running on windows on the command line; you should use `build.cmd`.**
 
 **On Windows, if building using cmd.exe**, you should place `SDLmain.lib`, `SDL.lib`,
@@ -34,9 +43,6 @@ Alternatively, you can supply your system libraries on the command line like so,
 these [here](https://www.libsdl.org/release/SDL2-devel-2.0.16-VC.zip). They're located under
 lib/x64.
 
-If you desperately want better build times, you can speed up builds by specifying a `ccache`
-`CC` variable (e.g. `CC='ccache gcc' ./build.sh`). After the first build, these builds should
-be quite quick (on my machine, building from scratch moves from 1 second to about .1 seconds).
 
 ## Cross Compiling
 
@@ -47,7 +53,7 @@ If you are cross compiling, between each build, you should run `./build.sh clean
 From Linux, to compile a windows executable, all you need to do is make sure you have mingw64 (`sudo apt-get install mingw-w64`).
 
 ```
-CC=i686-w64-mingw32-gcc AR=i686-w64-mingw32-gcc-ar SDL_CONFIGURE="--host=i686-w64-mingw32" ./build.sh -DNTDDI_VERSION=NTDDI_VISTA -D_WIN32_WINNT=_WIN32_WINNT_VISTA
+CC=i686-w64-mingw32-gcc AR=i686-w64-mingw32-gcc-ar SDL_CONFIGURE="--host=i686-w64-mingw32" ./build.sh
 ```
 
 ### Linux to MacOS
