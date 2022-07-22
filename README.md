@@ -11,6 +11,8 @@ Quickstart, if you have a C compiler.
 git clone git@github.com:adamharrison/lite-xl-simplified.git --shallow-submodules --recurse-submodules && cd lite-xl-simplified && ./build.sh && ./lite-xl
 ````
 
+CI enabled on this repository, so you can grab Windows and Linux builds from the appropriate page.
+
 ## Supporting Libraries
 
 The 4 supporting libraries of lite are now git submodules. These **must** be pulled in with: 
