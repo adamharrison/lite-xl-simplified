@@ -15,14 +15,14 @@ jobs:
       - name: Clone Submodules
         run: git submodule update --init --depth=1
       - name: Build Linux
-        run: ./build.sh && tar -czvf lite-xl.tar.gz lite-xl data
+        run: ./build.sh -DLITE_VERSION='"'git-`git rev-parse --short HEAD`'"' && tar -czvf lite-xl.tar.gz lite-xl data
       - name: Upload Linux
         uses: actions/upload-artifact@v3
         with:
           name: lite-xl-linux.tar.gz
           path: lite-xl.tar.gz
       - name: Build Windows
-        run: sudo apt-get install mingw-w64 && CC=i686-w64-mingw32-gcc AR=i686-w64-mingw32-gcc-ar SDL_CONFIGURE="--host=i686-w64-mingw32" ./build.sh && zip lite-xl.zip lite-xl.exe data
+        run: sudo apt-get install mingw-w64 && ./build.sh clean && CC=i686-w64-mingw32-gcc AR=i686-w64-mingw32-gcc-ar SDL_CONFIGURE="--host=i686-w64-mingw32" ./build.sh -DLITE_VERSION='"'git-`git rev-parse --short HEAD`'"' && zip lite-xl.zip lite-xl.exe data
       - name: Upload Windows
         uses: actions/upload-artifact@v3
         with:
