@@ -22,7 +22,7 @@ jobs:
           name: lite-xl-linux.tar.gz
           path: lite-xl.tar.gz
       - name: Build Windows
-        run: apt-get install mingw-w64 && CC=i686-w64-mingw32-gcc AR=i686-w64-mingw32-gcc-ar SDL_CONFIGURE="--host=i686-w64-mingw32" ./build.sh && zip lite-xl.zip lite-xl.exe data
+        run: sudo apt-get install mingw-w64 && CC=i686-w64-mingw32-gcc AR=i686-w64-mingw32-gcc-ar SDL_CONFIGURE="--host=i686-w64-mingw32" ./build.sh && zip lite-xl.zip lite-xl.exe data
       - name: Upload Windows
         uses: actions/upload-artifact@v3
         with:
