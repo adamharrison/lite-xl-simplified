@@ -3,6 +3,8 @@
 #include <stdlib.h>
 #include <ctype.h>
 #include <string.h>
+#define PCRE2_CODE_UNIT_WIDTH 8
+#include <pcre2.h>
 
 struct pattern {
   int flags;
@@ -10,7 +12,7 @@ struct pattern {
 };
 
 struct symbol_type {
-  char str[12];
+  char str[16];
 };
 
 struct rule {
@@ -23,7 +25,7 @@ struct rule {
 
 struct symbol {
   char key[64];
-  char value[12];
+  char value[16];
 };
 
 struct syntax {
@@ -38,17 +40,18 @@ static int sort_symbols(const void* a, const void* b) { return strcmp(((struct s
 
 // This pattern matching function should be identical lua's with the following enhancements:
 // %a, %w, %l, %u, %c match any UTF-8 character over codepoint 128.
-size_t match_pattern_internal(const char* start_pattern, const char* token, size_t token_length, size_t offset, size_t* matched_lengths, bool next_match_only) {
+size_t match_pattern_internal(const char* pattern, const char* token, size_t token_length, size_t offset, size_t* matched_lengths, bool next_match_only) {
   size_t last_offset = offset;
+  const char* start_pattern = pattern, *end_pattern = pattern + strlen(pattern);
   const char* start_token = token + offset, *end_token = token + token_length;
   int open_square = 0, inverted_character_class = 0;
-  const char* positive_lookahead_assertion = NULL;
+  const char* frontier_token = NULL, *frontier_pattern = NULL;
   const char *start_character_class = start_pattern;
   int match_min = 1, match_max = 1, match_count = 0, matched_idx = 0;
-  bool matches = false; 
+  bool matches = false, finished_pattern = false; 
   while (*start_pattern) {
     if (start_token == end_token) { 
-      if (match_count >= match_min)
+      if (finished_pattern && match_count >= match_min)
         break;
       return 0;
     }
@@ -88,11 +91,12 @@ size_t match_pattern_internal(const char* start_pattern, const char* token, size
           case 'w': matches = isalnum(*start_token) || type > 128; break;
           case 'l': matches = islower(*start_token) || type > 128; break;
           case 'u': matches = isupper(*start_token) || type > 128; break;
+          case 'd': matches = isdigit(*start_token); break;
           case 'c': matches = iscntrl(*start_token); break;
           case 'p': matches = ispunct(*start_token); break;
           case 's': matches = isspace(*start_token); break;
           case 'x': matches = isxdigit(*start_token); break;
-          case 'f': start_pattern += 2; positive_lookahead_assertion = start_token; continue; break;
+          case 'f': frontier_pattern = start_pattern; start_pattern += 2; frontier_token = start_token; continue; break;
           default: matches = (type == *start_token); break;
         }
         if (lower != type) matches = !matches; // if capitalized, invert the character class
@@ -113,9 +117,21 @@ size_t match_pattern_internal(const char* start_pattern, const char* token, size
       matches = false;
     }
     if (!open_square) {
-      if (positive_lookahead_assertion) {
-         start_token = positive_lookahead_assertion - 1;
-         positive_lookahead_assertion = NULL;
+      if (frontier_pattern) {
+        if (frontier_pattern == pattern) { // Beginning frontier.
+          if (inverted_character_class && (start_token == token || match_pattern_internal(frontier_pattern + 2, token, 1, start_token - token, NULL, true)))
+            return 0;
+          if (!inverted_character_class && start_token != token && match_pattern_internal(frontier_pattern + 2, token, 1, start_token - token, NULL, true))
+            return 0;
+        } else { // Ending frontier.
+          if (inverted_character_class && (end_token == token || match_pattern_internal(frontier_pattern + 2, token, 1, (start_token - token) + 1, NULL, true)))
+            return 0;
+          if (!inverted_character_class && end_token != token && match_pattern_internal(frontier_pattern + 2, token, 1, (start_token - token) + 1, NULL, true))
+            return 0;
+        }
+        start_token = frontier_token - 1;
+        frontier_token = NULL;
+        frontier_pattern = NULL;
       }
       bool greedy = false;
       switch (*start_pattern) {
@@ -124,6 +140,7 @@ size_t match_pattern_internal(const char* start_pattern, const char* token, size
         case '+': match_min = 1; match_max = INT_MAX; ++start_pattern; greedy = true; break;
         case '?': match_min = 0; match_max = 1      ; ++start_pattern; greedy = true; break;
       }
+      finished_pattern = start_pattern == end_pattern - 1;
       if (recent_match && match_count < match_max) {
         if (greedy || !match_pattern_internal(start_pattern + 1, start_token, token_length - (start_token - token), offset, NULL, true)) {
           start_pattern = start_character_class; 
@@ -147,6 +164,7 @@ size_t match_pattern_internal(const char* start_pattern, const char* token, size
     start_character_class = start_pattern;
     inverted_character_class = 0;
   }
+  
   if (matched_lengths)
     matched_lengths[matched_idx++] = start_token - (token + offset);
   return matched_idx;
@@ -171,8 +189,9 @@ static struct subsyntax_info get_subsyntax_details(unsigned long long state) {
   return (struct subsyntax_info){ state & 0xFF, 0 };
 }
 
-static int emit_token(lua_State* L, struct syntax* self, struct symbol_type* symbol_type, int offset, int start, const char* str, int idx) {
+static int emit_token(lua_State* L, struct syntax* self, struct symbol_type* symbol_type, int offset, int start, const char* str, int idx, const char** last_token) {
   if (offset - start > 0) {
+    const char* symbol = "normal";
     if (symbol_type) {
       struct symbol key, *target = NULL; 
       if (offset - start < sizeof(key.key)) {
@@ -180,12 +199,21 @@ static int emit_token(lua_State* L, struct syntax* self, struct symbol_type* sym
         key.key[offset - start] = 0;
         target = bsearch(&key, self->symbols, self->symbol_length, sizeof(struct symbol), sort_symbols);
       }
-      lua_pushstring(L, target ? target->value : symbol_type->str);
-    } else
-      lua_pushliteral(L, "normal");
+      symbol = target ? target->value : symbol_type->str;
+    }
+    if (*last_token && strcmp(*last_token, symbol) == 0) {
+      lua_rawgeti(L, -1, (idx - 1) * 2 + 2);
+      size_t length = lua_tointeger(L, -1) + (offset - start);
+      lua_pop(L, 1);
+      lua_pushinteger(L, length);
+      lua_rawseti(L, -2, (idx - 1) * 2 + 2);
+      return 0;
+    }
+    lua_pushstring(L, symbol);
     lua_rawseti(L, -2, idx * 2 + 1);
     lua_pushinteger(L, offset - start);
     lua_rawseti(L, -2, idx * 2 + 2);
+    *last_token = symbol;
     return 1;
   }
   return 0;
@@ -195,11 +223,10 @@ static int total_lines_tokenized = 0;
 
 static int tokenize_line(lua_State* L, struct syntax* self, struct syntax* target, const char* line, size_t length, unsigned long long* state, bool quick) {
   struct subsyntax_info info = get_subsyntax_details(*state);
-  size_t offset = 0, i;
-  size_t last_emission = offset;
-  int amount_matched = 0;
+  size_t offset = 0, last_emission = 0, amount_matched = 0, i;
   size_t matched_lengths[256];
   int rule_length = quick ? target->max_stateful_length : target->rule_length;
+  const char* last_symbol = NULL;
   while (offset < length) {
     if (!info.rule_idx) {
       for (i = 0; i < rule_length; ++i) {
@@ -207,20 +234,20 @@ static int tokenize_line(lua_State* L, struct syntax* self, struct syntax* targe
         if (match_lengths > 0) {
           // fprintf(stderr, "MATCH: `%s` `%s`\n", target->rules[i].patterns[0]->str, &line[offset]);
           if (last_emission < offset) {
-            amount_matched += !quick ? emit_token(L, self, NULL, offset, last_emission, line, amount_matched) : 0;
+            amount_matched += !quick ? emit_token(L, self, NULL, offset, last_emission, line, amount_matched, &last_symbol) : 0;
             last_emission = offset;
           }
           if (target->rules[i].patterns[1]) {
             info.rule_idx = i + 1;
             offset += matched_lengths[0];
           } else {
-            amount_matched += !quick ? emit_token(L, self, NULL, offset, last_emission, line, amount_matched) : 0;
+            amount_matched += !quick ? emit_token(L, self, NULL, offset, last_emission, line, amount_matched, &last_symbol) : 0;
             if (target->rules[i].subsyntax)
               *state = (*state & ~(0xFF << (info.subsyntax_idx * 8))) | (i << (info.subsyntax_idx * 8));
               
             last_emission = offset;
             for (int j = 0; j < match_lengths; ++j) {
-              amount_matched += !quick ? emit_token(L, self, j < target->rules[i].symbol_type_length ? &target->rules[i].symbol_types[j] : NULL, last_emission + matched_lengths[j], last_emission, line, amount_matched) : 0;
+              amount_matched += !quick ? emit_token(L, self, j < target->rules[i].symbol_type_length ? &target->rules[i].symbol_types[j] : NULL, last_emission + matched_lengths[j], last_emission, line, amount_matched, &last_symbol) : 0;
               last_emission += matched_lengths[j];
               offset += matched_lengths[j];
             }
@@ -241,7 +268,7 @@ static int tokenize_line(lua_State* L, struct syntax* self, struct syntax* targe
         if (match_lengths > 0) {
           for (int j = 0; j < match_lengths; ++j) {
             offset += matched_lengths[j];
-            amount_matched += !quick ? emit_token(L, self, j < target->rules[info.rule_idx - 1].symbol_type_length ? &target->rules[info.rule_idx - 1].symbol_types[j] : NULL, offset, last_emission, line, amount_matched) : 0;
+            amount_matched += !quick ? emit_token(L, self, j < target->rules[info.rule_idx - 1].symbol_type_length ? &target->rules[info.rule_idx - 1].symbol_types[j] : NULL, offset, last_emission, line, amount_matched, &last_symbol) : 0;
             last_emission = offset;
           }
           info.rule_idx = 0;
@@ -251,7 +278,7 @@ static int tokenize_line(lua_State* L, struct syntax* self, struct syntax* targe
       }
     }
   }
-  amount_matched += !quick ? emit_token(L, self, info.rule_idx > 0 ? &target->rules[info.rule_idx - 1].symbol_types[0] : NULL, offset, last_emission, line, amount_matched) : 0;
+  amount_matched += !quick ? emit_token(L, self, info.rule_idx > 0 ? &target->rules[info.rule_idx - 1].symbol_types[0] : NULL, offset, last_emission, line, amount_matched, &last_symbol) : 0;
   *state = (*state & ~(0xFF << (info.rule_idx * 8))) | (info.rule_idx << (info.subsyntax_idx * 8));
   total_lines_tokenized += 1;
   return amount_matched;
