@@ -50,6 +50,4 @@ function tokenizer.each_token(t)
   return iter, t, -1
 end
 
-setmetatable(tokenizer, { __gc = function() print("TOKENIZING", total_time_tokenizing, total_lines) end })
-
 return tokenizer

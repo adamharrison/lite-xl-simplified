@@ -5,9 +5,12 @@
 #include <string.h>
 #define PCRE2_CODE_UNIT_WIDTH 8
 #include <pcre2.h>
+#define PATTERN_REGEX 1
+#define MAX_TOKEN_MATCHES 256
 
 struct pattern {
   int flags;
+  pcre2_code* re;
   char str[];
 };
 
@@ -171,6 +174,23 @@ size_t match_pattern_internal(const char* pattern, const char* token, size_t tok
 }
 
 size_t match_pattern(struct pattern* pattern, const char* token, size_t length, size_t offset, size_t* matched_lengths) {
+  if ((pattern->flags & 0x1) == PATTERN_REGEX) {
+    pcre2_match_data* md = pcre2_match_data_create_from_pattern(pattern->re, NULL);
+    int rc = pcre2_match(pattern->re, (PCRE2_SPTR)&token[offset], length - offset, 0, 0, md, NULL);
+    if (rc < 0) {
+      pcre2_match_data_free(md);
+      return 0;
+    }
+    PCRE2_SIZE* ovector = pcre2_get_ovector_pointer(md);
+    if (ovector[0] > ovector[1]) {
+      pcre2_match_data_free(md);
+      return 0;
+    }
+    for (int i = 0; i < rc*2 && i < MAX_TOKEN_MATCHES; i++)
+      matched_lengths[i] = ovector[i]+offset+1;
+    pcre2_match_data_free(md);
+    return rc*2;
+  }
   return match_pattern_internal(pattern->str, token, length, offset, matched_lengths, false);
 }
 
@@ -224,7 +244,7 @@ static int total_lines_tokenized = 0;
 static int tokenize_line(lua_State* L, struct syntax* self, struct syntax* target, const char* line, size_t length, unsigned long long* state, bool quick) {
   struct subsyntax_info info = get_subsyntax_details(*state);
   size_t offset = 0, last_emission = 0, amount_matched = 0, i;
-  size_t matched_lengths[256];
+  size_t matched_lengths[MAX_TOKEN_MATCHES];
   int rule_length = quick ? target->max_stateful_length : target->rule_length;
   const char* last_symbol = NULL;
   while (offset < length) {
@@ -312,6 +332,31 @@ static int f_tokenize(lua_State* L) {
   return 2;
 }
 
+static struct pattern* lua_topattern(lua_State* L, int index, bool regex) {
+  size_t len;
+  if (!regex) {
+    const char* str = luaL_checklstring(L, index, &len);
+    struct pattern* pattern = calloc(1 ,sizeof(struct pattern) + len + 1);
+    strncpy(pattern->str, str, len);
+    pattern->str[len] = 0;
+    return pattern;
+  }
+  size_t regex_len;
+  PCRE2_SPTR regex_str = (PCRE2_SPTR)lua_tolstring(L, index, &regex_len);
+  PCRE2_SIZE error_offset;
+  int error_number;
+  pcre2_code* re = pcre2_compile(regex_str, regex_len, PCRE2_UTF, &error_number, &error_offset, NULL);
+  if (!re) {
+    PCRE2_UCHAR error_message[256];
+    pcre2_get_error_message(error_number, error_message, sizeof(error_message));
+    luaL_error(L, "error compiling regex '%s': %s at offset %d", regex_str, error_message, error_number);
+  }
+  struct pattern* pattern = calloc(1 ,sizeof(struct pattern));
+  pattern->re = re;
+  pattern->flags = PATTERN_REGEX;
+  return pattern;
+}
+
 static int f_new_syntax(lua_State* L) {
   size_t len;
   lua_newtable(L);
@@ -327,20 +372,24 @@ static int f_new_syntax(lua_State* L) {
   for (size_t i = 0; i < self->rule_length; ++i) {
     lua_rawgeti(L, -1, i+1);
     lua_getfield(L, -1, "pattern");
+    bool regex = false;
+    if (lua_isnil(L, -1)) {
+      lua_pop(L, 1);
+      lua_getfield(L, -1, "regex");
+      if (lua_isnil(L, -1))
+        return luaL_error(L, "unparseable rule %d", i);
+      regex = true;
+    }
     if (lua_type(L, -1) == LUA_TTABLE) {
       size_t elements = lua_rawlen(L, -1);
       self->max_stateful_length = i + 1;
       for (size_t j = 0; j < elements; ++j) {
         lua_rawgeti(L, -1, j+1);
-        const char* str = luaL_checklstring(L, -1, &len);
-        self->rules[i].patterns[j] = calloc(1 ,sizeof(struct pattern) + len + 1);
-        strncpy(self->rules[i].patterns[j]->str, str, len);
+        self->rules[i].patterns[j] = lua_topattern(L, -1, j <= 1 ? regex : false);
         lua_pop(L, 1);
       }
-    } else {
-      const char* str = luaL_checklstring(L, -1, &len);
-      self->rules[i].patterns[0] = calloc(1, sizeof(struct pattern) + len + 1);
-      strncpy(self->rules[i].patterns[0]->str, str, len);
+    } else if (lua_type(L, -1) == LUA_TSTRING) {
+      self->rules[i].patterns[0] = lua_topattern(L, -1, regex);
     }
     lua_pop(L, 1);
     lua_getfield(L, -1, "type");

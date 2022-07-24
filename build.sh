@@ -51,7 +51,6 @@ fi
 
 if [ ! -f $LNAME ] && { [ ! -z "$LLSRCS" ]; }; then
   echo "Building $LNAME... (Can take a moment, but only needs to be done once)"
-  echo $LLSRCS
   for SRC in $LLSRCS; do 
     ((i=i%JOBS)); ((i++==0)) && wait # Parallelize the build.
     $CC -c $SRC $LLFLAGS &

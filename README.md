@@ -43,6 +43,14 @@ If you desperately want better build times, you can speed up builds by specifyin
 `CC` variable (e.g. `CC='ccache gcc' ./build.sh`). After the first build, these builds should
 be quite quick (on my machine, building from scratch moves from 1 second to about .1 seconds).
 
+### LuaJIT
+
+Automatically compatible with luajit, just do:
+
+```
+./build.sh `pkg-config --cflags luajit` `pkg-config luajit --libs`
+```
+
 ### Cross Compiling
 
 If you are cross compiling, between each build, you should run `./build.sh clean`.
@@ -77,6 +85,16 @@ To compile to webassembly, do:
 ```
 AR=emar CC=emcc ./build.sh -I`$EMSDK/upstream/emscripten/system/bin/sdl2-config --cflags` `$EMSDK/upstream/emscripten/system/bin/sdl2-config --libs` -o index.html -s ASYNCIFY -s USE_SDL=2 -s ASYNCIFY_WHITELIST="['main','SDL_WaitEvent','SDL_WaitEventTimeout','SDL_Delay','Emscripten_GLES_SwapWindow','SDL_UpdateWindowSurfaceRects','f_call','luaD_callnoyield','luaV_execute','luaD_precall','precallC','luaD_call','f_sleep','Emscripten_UpdateWindowFramebuffer','luaC_freeallobjects','GCTM','luaD_rawrunprotected','lua_close','close_state','f_end_frame','rencache_end_frame','ren_update_rects','renwin_update_rects','lua_pcallk','luaB_xpcall','dynCall_vii','f_wait_event']"  --preload-file data -s INITIAL_MEMORY=33554432 -s DISABLE_EXCEPTION_CATCHING=1 -s ALLOW_MEMORY_GROWTH=1 --shell-file resources/lite-xl.html
 ```
+
+## Deviations from Lite XL
+
+* Large build system replaced with a 70SLOC `build.sh` and `git` submodules.
+* Compatibilty with luajit.
+* C-written tokenizer that tokenizes several orders of magnitude faster.
+* Removed explicit UTF-8 support, as tokenizer handles it implicitly.
+* Removed volumunous documentation.
+* Anchorpoints for emscripten.
+* 
 
 ## Licenses
 
