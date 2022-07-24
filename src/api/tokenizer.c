@@ -366,7 +366,7 @@ static int f_new_syntax(lua_State* L) {
     if (lua_type(L, -1) == LUA_TTABLE) {
       f_new_syntax(L);
       self->rules[i].subsyntax = lua_touserdata(L, -1);
-      lua_rawseti(L, internal_syntax_table, luaL_len(L, internal_syntax_table) + 1);
+      lua_rawseti(L, internal_syntax_table, lua_rawlen(L, internal_syntax_table) + 1);
     } else if (lua_type(L, -1) == LUA_TSTRING && lua_type(L, -1) == LUA_TFUNCTION) {
       lua_pushvalue(L, 2);
       lua_pushvalue(L, -2);
