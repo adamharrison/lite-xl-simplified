@@ -20,7 +20,11 @@ jobs:
           printf "Package: lite-xl\nVersion: $VERSION\nArchitecture: $ARCH\nMaintainer: $MAINTAINER\nDescription: $DESCRIPTION\n" > $NAME/DEBIAN/control
           dpkg-deb --build --root-owner-group $NAME
       - name: Build Windows
-        run: sudo apt-get install mingw-w64 && ./build.sh clean && CC=i686-w64-mingw32-gcc AR=i686-w64-mingw32-gcc-ar SDL_CONFIGURE="--host=i686-w64-mingw32" ./build.sh -DLITE_VERSION='"'$VERSION-win32-`git rev-parse --short HEAD`'"' && zip -r lite-xl-win32.zip lite-xl.exe data
+        run: sudo apt-get install mingw-w64 && ./build.sh clean && CC=i686-w64-mingw32-gcc AR=i686-w64-mingw32-gcc-ar SDL_CONFIGURE="--host=i686-w64-mingw32" ./build.sh -DLITE_VERSION='"'$VERSION-win32-`git rev-parse --short HEAD`'"' && zip -r lite-xl-win32.zip lite-xl.exe data        
+      - name: Build Linux Enhanced
+        run: git checkout enhanced && ./build.sh -DLITE_VERSION='"'$VERSION-linux-`git rev-parse --short HEAD`'"' && tar -czvf lite-xl-enhanced-linux.tar.gz lite-xl data
+      - name: Build Windows Enhanced
+        run: sudo apt-get install mingw-w64 && ./build.sh clean && CC=i686-w64-mingw32-gcc AR=i686-w64-mingw32-gcc-ar SDL_CONFIGURE="--host=i686-w64-mingw32" ./build.sh -DLITE_VERSION='"'$VERSION-win32-`git rev-parse --short HEAD`'"' && zip -r lite-xl-enhanced-win32.zip lite-xl.exe data
       - name: Create Release
         env: { GITHUB_TOKEN: "${{ github.token }}" }
         run: gh release delete -y continuous || true; gh release create -t 'Continuous Release' continuous *.zip *.tar.gz *.deb
