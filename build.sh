@@ -11,8 +11,6 @@ LDFLAGS=" $LDFLAGS -lm -static-libgcc"
 
 [[ "$@" == "clean" ]] && rm -rf lib/SDL/build liblite.a *.o index* $BIN && exit 0
 
-[[ $OSTYPE == 'msys'* || $CC == *'mingw'* ]] && CFLAGS="$CFLAGS -DNTDDI_VERSION=NTDDI_VISTA -D_WIN32_WINNT=_WIN32_WINNT_VISTA"
-
 # Compile SDL separately, because it's the only complicated module.
 if [[ "$@" != *"-lSDL"* && "$@" != *"-sUSE_SDL"* ]]; then
   [ ! -e "lib/SDL/include" ] && echo "Make sure you've cloned submodules. (git submodule update --init --depth=1)" && exit -1
@@ -47,7 +45,7 @@ if [[ "$@" != *"-lfreetype"* ]]; then
     lib/freetype/src/smooth/smooth.c lib/freetype/src/autofit/autofit.c lib/freetype/src/psnames/psnames.c lib/freetype/src/pshinter/pshinter.c lib/freetype/src/cff/cff.c \
     lib/freetype/src/gzip/ftgzip.c lib/freetype/src/base/ftbitmap.c"
 fi
-[[ "$@" != *"-llua"* ]] && CFLAGS="$CFLAGS -Ilib/lua" && LLFLAGS="$LLFLAGS -DMAKE_LIB=1" && LLSRCS="$LLSRCS lib/lua/onelua.c"
+[[ "$@" != *"lua"* ]] && CFLAGS="$CFLAGS -Ilib/lua" && LLFLAGS="$LLFLAGS -DMAKE_LIB=1" && LLSRCS="$LLSRCS lib/lua/onelua.c"
 
 if [ ! -f $LNAME ] && { [ ! -z "$LLSRCS" ]; }; then
   echo "Building $LNAME... (Can take a moment, but only needs to be done once)"
