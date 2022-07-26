@@ -22,7 +22,7 @@ jobs:
       - name: Build Windows
         run: sudo apt-get install mingw-w64 && ./build.sh clean && CC=i686-w64-mingw32-gcc AR=i686-w64-mingw32-gcc-ar SDL_CONFIGURE="--host=i686-w64-mingw32" ./build.sh -DLITE_VERSION='"'$VERSION-win32-`git rev-parse --short HEAD`'"' && zip -r lite-xl-win32.zip lite-xl.exe data        
       - name: Build Linux Enhanced
-        run: git checkout enhanced -B master refs/remotes/origin/master && ./build.sh clean && ./build.sh -DLITE_VERSION='"'$VERSION-linux-`git rev-parse --short HEAD`'"' && tar -czvf lite-xl-enhanced-linux.tar.gz lite-xl data
+        run: git checkout -B enhanced refs/remotes/origin/enhanced && ./build.sh clean && ./build.sh -DLITE_VERSION='"'$VERSION-linux-`git rev-parse --short HEAD`'"' && tar -czvf lite-xl-enhanced-linux.tar.gz lite-xl data
       - name: Build Windows Enhanced
         run: sudo apt-get install mingw-w64 && ./build.sh clean && CC=i686-w64-mingw32-gcc AR=i686-w64-mingw32-gcc-ar SDL_CONFIGURE="--host=i686-w64-mingw32" ./build.sh -DLITE_VERSION='"'$VERSION-win32-`git rev-parse --short HEAD`'"' && zip -r lite-xl-enhanced-win32.zip lite-xl.exe data
       - name: Create Release
