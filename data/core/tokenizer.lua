@@ -10,6 +10,7 @@ local total_time_tokenizing = 0.0
 
 function tokenizer.get(syntax_input)
   local syntax_object = type(syntax_input) == "table" and syntax_input or syntax.get(syntax_input)
+  if not syntax_object then return end
   local native = tokenizer.syntaxes[syntax_object]
   if not native then 
     native = Tokenizer.new(syntax_object, tokenizer.get)
