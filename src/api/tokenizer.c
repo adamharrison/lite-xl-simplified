@@ -41,7 +41,7 @@ struct syntax {
 };
 
 static int sort_symbols(const void* a, const void* b) { return strcmp(((struct symbol*)a)->key, ((struct symbol*)b)->key); }
-
+static const char* next_utf8_character(const char* p) { while ((*(++p) & 0xC0) == 0x80) { } return p; }
 // This pattern matching function should be identical lua's with the following enhancements:
 // %a, %w, %l, %u, %c match any UTF-8 character over codepoint 128.
 size_t match_pattern_internal(const char* pattern, const char* token, size_t token_length, size_t offset, size_t* matched_lengths, bool next_match_only) {
@@ -55,11 +55,6 @@ size_t match_pattern_internal(const char* pattern, const char* token, size_t tok
   bool matches = false, finished_pattern = false; 
   while (*start_pattern) {
     if (start_token == end_token) { 
-      /*if (next_match_only) {
-        if (inverted_character_class)
-          matches = !matches;
-        return matches ? 1 : 0;
-      }*/
       if (finished_pattern && match_count >= match_min)
         break;
       return 0;
@@ -156,11 +151,11 @@ size_t match_pattern_internal(const char* pattern, const char* token, size_t tok
       if (recent_match && match_count < match_max) {
         if (greedy || !match_pattern_internal(start_pattern, token, token_length, start_token - token, NULL, true)) {
           start_pattern = start_character_class; 
-          ++start_token;
+          start_token = next_utf8_character(start_token);
           continue; 
         } else {
           finished_pattern = ++start_pattern == end_pattern - 1;
-          ++start_token;
+          start_token = next_utf8_character(start_token);
           continue;
         }
       } else
@@ -175,7 +170,7 @@ size_t match_pattern_internal(const char* pattern, const char* token, size_t tok
     match_min = 1;
     match_max = 1;
     if (match_count > 0 && recent_match)
-      ++start_token;
+      start_token = next_utf8_character(start_token);
     match_count = 0;
     start_character_class = start_pattern;
     inverted_character_class = 0;
