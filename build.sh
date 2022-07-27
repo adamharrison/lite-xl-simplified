@@ -45,7 +45,7 @@ if [[ "$@" != *"-lfreetype"* ]]; then
     lib/freetype/src/smooth/smooth.c lib/freetype/src/autofit/autofit.c lib/freetype/src/psnames/psnames.c lib/freetype/src/pshinter/pshinter.c lib/freetype/src/cff/cff.c \
     lib/freetype/src/gzip/ftgzip.c lib/freetype/src/base/ftbitmap.c"
 fi
-[[ "$@" != *"lua"* ]] && CFLAGS="$CFLAGS -Ilib/lua" && LLFLAGS="$LLFLAGS -DMAKE_LIB=1" && LLSRCS="$LLSRCS lib/lua/onelua.c"
+[[ "$@" != *"-llua"* ]] && CFLAGS="$CFLAGS -Ilib/lua" && LLFLAGS="$LLFLAGS -DMAKE_LIB=1" && LLSRCS="$LLSRCS lib/lua/onelua.c"
 
 if [ ! -f $LNAME ] && { [ ! -z "$LLSRCS" ]; }; then
   echo "Building $LNAME... (Can take a moment, but only needs to be done once)"
