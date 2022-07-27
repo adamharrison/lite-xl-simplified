@@ -111,6 +111,7 @@ end
 
 function CommandView:move_suggestion_idx(dir)
   local function overflow_suggestion_idx(n, count)
+    if count == 0 then return 0 end
     if self.state.wrap then
       return (n - 1) % count + 1
     else
@@ -222,6 +223,11 @@ function CommandView:exit(submitted, inexplicit)
   if not submitted then cancel(not inexplicit) end
   self.save_suggestion = nil
   self.last_text = ""
+end
+
+
+function CommandView:get_line_height()
+  return math.floor(self:get_font():get_height() * 1.2)
 end
 
 
