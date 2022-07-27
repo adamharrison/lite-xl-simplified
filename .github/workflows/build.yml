@@ -7,7 +7,11 @@ jobs:
     defaults: { run: { shell: bash } }
     steps:
       - name: Checkout Code
-        run: git clone https://github.com/adamharrison/lite-xl-simplified.git --shallow-submodules --recurse-submodules .
+        uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+      - name: Clone Submodules
+        run: git submodule update --init --depth=1
       - name: Build Linux
         run: ./build.sh -DLITE_VERSION='"'$VERSION-linux-`git rev-parse --short HEAD`'"' && tar -czvf lite-xl-linux.tar.gz lite-xl data
       - name: Package Debian/Ubuntu
@@ -22,7 +26,7 @@ jobs:
       - name: Build Linux Enhanced
         run: |
             git checkout enhanced && git clone https://github.com/LuaJIT/LuaJIT.git --depth=1 && cd LuaJIT && make BUILDMODE=static && cd ..
-            ./build.sh clean && ./build.sh -LLuaJIT/src -lluajit -ILuaJIT/src -DLITE_VERSION='"'$VERSION-linux-`git rev-parse --short HEAD`'"' && tar -czvf lite-xl-enhanced-linux.tar.gz lite-xl data
+            ./build.sh -LLuaJIT/src -lluajit -ILuaJIT/src -DLITE_VERSION='"'$VERSION-linux-`git rev-parse --short HEAD`'"' && tar -czvf lite-xl-enhanced-linux.tar.gz lite-xl data
       - name: Build Windows Enhanced
         run: |
             sudo apt-get install mingw-w64 libc6-dev-i386 && cd LuaJIT && make clean && make HOST_CC="gcc -m32" CROSS=i686-w64-mingw32- TARGET_SYS=Windows BUILDMODE=static && cd ..
