@@ -7,9 +7,7 @@ jobs:
     defaults: { run: { shell: bash } }
     steps:
       - name: Checkout Code
-        uses: actions/checkout@v3
-      - name: Clone Submodules
-        run: git submodule update --init --depth=1
+        run: git clone https://github.com/adamharrison/lite-xl-simplified.git --shallow-submodules --recurse-submodules && cd lite-xl-simplified
       - name: Build Linux
         run: ./build.sh -DLITE_VERSION='"'$VERSION-linux-`git rev-parse --short HEAD`'"' && tar -czvf lite-xl-linux.tar.gz lite-xl data
       - name: Package Debian/Ubuntu
@@ -22,10 +20,10 @@ jobs:
       - name: Build Windows
         run: sudo apt-get install mingw-w64 && ./build.sh clean && CC=i686-w64-mingw32-gcc AR=i686-w64-mingw32-gcc-ar SDL_CONFIGURE="--host=i686-w64-mingw32" ./build.sh  -DNTDDI_VERSION=NTDDI_VISTA -D_WIN32_WINNT=_WIN32_WINNT_VISTA -DLITE_VERSION='"'$VERSION-win32-`git rev-parse --short HEAD`'"' && zip -r lite-xl-win32.zip lite-xl.exe data
       - name: Build Linux Enhanced
-        run: git checkout -B enhanced refs/remotes/origin/enhanced && ./build.sh clean && ./build.sh -DLITE_VERSION='"'$VERSION-linux-`git rev-parse --short HEAD`'"' && tar -czvf lite-xl-enhanced-linux.tar.gz lite-xl data
+        run: git checkout enhanced && ./build.sh clean && ./build.sh -DLITE_VERSION='"'$VERSION-linux-`git rev-parse --short HEAD`'"' && tar -czvf lite-xl-enhanced-linux.tar.gz lite-xl data
       - name: Build Windows Enhanced
         run: |
-            sudo apt-get install mingw-w64 libc6-dev-i386 && git clone https://github.com/LuaJIT/LuaJIT.git && cd LuaJIT && make HOST_CC="gcc -m32" CROSS=i686-w64-mingw32- TARGET_SYS=Windows BUILDMODE=static && cd ..
+            sudo apt-get install mingw-w64 libc6-dev-i386 && git clone https://github.com/LuaJIT/LuaJIT.git --depth=1 && cd LuaJIT && make HOST_CC="gcc -m32" CROSS=i686-w64-mingw32- TARGET_SYS=Windows BUILDMODE=static && cd ..
             ./build.sh clean && CC=i686-w64-mingw32-gcc AR=i686-w64-mingw32-gcc-ar SDL_CONFIGURE="--host=i686-w64-mingw32" ./build.sh -LLuaJIT/src -l:libluajit.a -ILuaJIT/src  -DNTDDI_VERSION=NTDDI_VISTA -D_WIN32_WINNT=_WIN32_WINNT_VISTA -DLITE_VERSION='"'$VERSION-win32-`git rev-parse --short HEAD`'"' && zip -r lite-xl-enhanced-win32.zip lite-xl.exe data
       - name: Create Release
         env: { GITHUB_TOKEN: "${{ github.token }}" }
