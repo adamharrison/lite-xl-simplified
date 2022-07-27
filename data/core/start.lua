@@ -54,3 +54,6 @@ local appimage_owd = os.getenv("OWD")
 if os.getenv("APPIMAGE") and appimage_owd then
   system.chdir(appimage_owd)
 end
+
+-- compatibility with lite-xl
+string.ufind = string.find
