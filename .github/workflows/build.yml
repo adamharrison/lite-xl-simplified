@@ -7,7 +7,7 @@ jobs:
     defaults: { run: { shell: bash } }
     steps:
       - name: Checkout Code
-        run: git clone https://github.com/adamharrison/lite-xl-simplified.git --shallow-submodules --recurse-submodules && cd lite-xl-simplified
+        run: git clone https://github.com/adamharrison/lite-xl-simplified.git --shallow-submodules --recurse-submodules .
       - name: Build Linux
         run: ./build.sh -DLITE_VERSION='"'$VERSION-linux-`git rev-parse --short HEAD`'"' && tar -czvf lite-xl-linux.tar.gz lite-xl data
       - name: Package Debian/Ubuntu
