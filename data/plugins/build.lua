@@ -400,8 +400,7 @@ end, {
 command.add(nil, {
   ["build:toggle-drawer"] = function()
     build.message_view.visible = not build.message_view.visible
-  end,
-  
+  end
 })
 
 keymap.add {
