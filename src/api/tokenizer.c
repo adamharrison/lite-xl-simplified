@@ -51,12 +51,22 @@ size_t match_pattern_internal(const char* pattern, const char* token, size_t tok
   int open_square = 0, inverted_character_class = 0;
   const char* frontier_token = NULL, *frontier_pattern = NULL;
   const char *start_character_class = start_pattern;
+  const char* last_greedy_match = NULL;
+  int last_greedy_match_count = 0;
   int match_min = 1, match_max = 1, match_count = 0, matched_idx = 0;
   bool matches = false, finished_pattern = false; 
   while (*start_pattern) {
     if (start_token == end_token) { 
-      if (finished_pattern && match_count >= match_min)
-        break;
+      if (finished_pattern) {
+        if (match_count >= match_min)
+          break;
+        return 0;
+      } else if (last_greedy_match) {
+        start_token = last_greedy_match;
+        last_greedy_match = NULL;
+        ++start_pattern;
+        continue;
+      }
       return 0;
     }
     if (open_square && matches && (*start_pattern != ']' || *(start_pattern-1) == '%')) {
@@ -74,7 +84,8 @@ size_t match_pattern_internal(const char* pattern, const char* token, size_t tok
       case ')': 
         if (open_square > 0) 
           goto default_match; 
-        matched_lengths[matched_idx++] = start_token - (token + offset);
+        if (matched_lengths)
+          matched_lengths[matched_idx++] = start_token - (token + offset);
         offset += start_token - (token + last_offset);
         last_offset = offset;
         start_character_class = ++start_pattern;
@@ -147,19 +158,20 @@ size_t match_pattern_internal(const char* pattern, const char* token, size_t tok
         case '+': match_min = 1; match_max = INT_MAX; ++start_pattern; greedy = true; break;
         case '?': match_min = 0; match_max = 1      ; ++start_pattern; greedy = true; break;
       }
-      finished_pattern = start_pattern == end_pattern - 1;
+      finished_pattern = start_pattern == end_pattern;
       if (recent_match && match_count < match_max) {
-        if (greedy || !match_pattern_internal(start_pattern, token, token_length, start_token - token, NULL, true)) {
+        bool matches_next = match_pattern_internal(start_pattern, token, token_length, start_token - token, NULL, true);
+        if (greedy || !matches_next) {
+          if (matches_next) {
+            last_greedy_match = start_token;
+            last_greedy_match_count = match_count;
+          }
           start_pattern = start_character_class; 
-          start_token = next_utf8_character(start_token);
-          continue; 
-        } else {
-          finished_pattern = ++start_pattern == end_pattern - 1;
-          start_token = next_utf8_character(start_token);
-          continue;
-        }
-      } else
-        open_square = 0;
+        } else
+          finished_pattern = ++start_pattern == end_pattern;
+        start_token = next_utf8_character(start_token);
+        continue;
+      }
     } 
     if (open_square) {
       start_pattern++;
