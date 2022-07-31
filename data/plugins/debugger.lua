@@ -764,17 +764,17 @@ function debugger.backends.gdb:run(program, arguments)
 end
 
 
-core.status_view:add_item(
-  function() return config.target_binary end,
-  "debugger:binary",
-  StatusView.Item.RIGHT,
-  function()
+core.status_view:add_item({
+  predicate = function() return config.target_binary end,
+  name = "debugger:binary",
+  alignment = StatusView.Item.RIGHT,
+  get_item = function()
     local dv = core.active_view
     return {
       style.text, config.target_binary .. (config.target_binary_arguments and "*" or "")
     }
   end,
-  function()
+  command = function()
      core.command_view:enter("Set Target Binary", {
       text = config.target_binary .. (config.target_binary_arguments and (" " .. config.target_binary_arguments) or ""),
       submit = function(text)
@@ -789,7 +789,7 @@ core.status_view:add_item(
       end
     })
   end
-)
+})
 
 command.add(function()
   return config.target_binary and system.get_file_info(config.target_binary)

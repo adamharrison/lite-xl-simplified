@@ -176,17 +176,17 @@ end
 
 
 ------------------ UI Elements
-core.status_view:add_item(
-  function() return build.current_target and build.targets[build.current_target] end,
-  "build:target",
-  StatusView.Item.RIGHT,
-  function()
+core.status_view:add_item({
+  predicate = function() return build.current_target and build.targets[build.current_target] end,
+  name = "build:target",
+  alignemnt = StatusView.Item.RIGHT,
+  get_item = function()
     local dv = core.active_view
     return {
       style.text, "target: " .. build.targets[build.current_target].name
     }
   end,
-  function()
+  command = function()
      core.command_view:enter("Select Build Target", {
       text = build.targets[build.current_target].name,
       submit = function(text)
@@ -208,7 +208,7 @@ core.status_view:add_item(
       end
     })
   end
-)
+})
 
 local doc_view_draw_line_gutter = DocView.draw_line_gutter
 function DocView:draw_line_gutter(idx, x, y, width)
@@ -344,6 +344,7 @@ build.message_view = BuildMessageView()
 local node = core.root_view:get_active_node()
 build.message_view_node = node:split("down", build.message_view, { y = true }, true)
 build.build_bar_node = TreeView.node.b:split("up", build.build_bar_view, {y = true})
+
 
 command.add(function()
   return not build.running_program or not build.running_program:running()
