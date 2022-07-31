@@ -14,7 +14,7 @@ LDFLAGS=" $LDFLAGS -lm -static-libgcc"
 # Compile SDL separately, because it's the only complicated module.
 if [[ "$@" != *"-lSDL"* && "$@" != *"-sUSE_SDL"* ]]; then
   [ ! -e "lib/SDL/include" ] && echo "Make sure you've cloned submodules. (git submodule update --init --depth=1)" && exit -1
-  [ ! -e "lib/SDL/build" ] && cd lib/SDL && mkdir -p build && cd build && CFLAGS="$LLFLAGS" CC=$CC ../configure $SDL_CONFIGURE --disable-audio --disable-joystick --disable-haptic -- && make -j $JOBS && cd ../../..
+  [ ! -e "lib/SDL/build" ] && cd lib/SDL && mkdir -p build && cd build && CFLAGS="$LLFLAGS" CC=$CC ../configure $SDL_CONFIGURE --disable-audio --disable-joystick --disable-haptic --disable-sensor -- && make -j $JOBS && cd ../../..
   LDFLAGS=" $LDFLAGS -Llib/SDL/build/build/.libs -l:libSDL2.a"
   [[ $OSTYPE == 'msys'* || $CC == *'mingw'* ]] && LDFLAGS=" $LDFLAGS -lmingw32 -l:libSDL2main.a"
   CFLAGS=" $CFLAGS -Ilib/SDL/include"
