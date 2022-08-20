@@ -15,7 +15,6 @@ If you have a C compiler, and `git`:
 git clone git@github.com:adamharrison/lite-xl-simplified.git --shallow-submodules \
   --recurse-submodules && cd lite-xl-simplified && ./build.sh && ./lite-xl
 ````
-<<<<<<< HEAD
 
 CI is enabled on this repository, so you can grab Windows and Linux builds from the 
 `continuous` [release page](https://github.com/adamharrison/lite-xl-simplified/releases/tag/continuous).
@@ -63,7 +62,6 @@ From Linux, to compile a windows executable, all you need to do is make sure you
 ```
 CC=i686-w64-mingw32-gcc AR=i686-w64-mingw32-gcc-ar SDL_CONFIGURE="--host=i686-w64-mingw32" ./build.sh
 ```
-=======
 
 CI is enabled on this repository, so you can grab Windows and Linux builds from the 
 `continuous` [release page](https://github.com/adamharrison/lite-xl-simplified/releases/tag/continuous).
@@ -103,7 +101,6 @@ From Linux, to compile a windows executable, all you need to do is make sure you
 ```
 CC=i686-w64-mingw32-gcc AR=i686-w64-mingw32-gcc-ar SDL_CONFIGURE="--host=i686-w64-mingw32" ./build.sh
 ```
->>>>>>> 6ea59ebc... Removed many things.
 
 #### Linux to MacOS
 
@@ -127,7 +124,6 @@ To compile to webassembly, do:
 ```
 AR=emar CC=emcc ./build.sh -I`$EMSDK/upstream/emscripten/system/bin/sdl2-config --cflags` `$EMSDK/upstream/emscripten/system/bin/sdl2-config --libs` -o index.html -s ASYNCIFY -s USE_SDL=2 -s ASYNCIFY_WHITELIST="['main','SDL_WaitEvent','SDL_WaitEventTimeout','SDL_Delay','Emscripten_GLES_SwapWindow','SDL_UpdateWindowSurfaceRects','f_call','luaD_callnoyield','luaV_execute','luaD_precall','precallC','luaD_call','f_sleep','Emscripten_UpdateWindowFramebuffer','luaC_freeallobjects','GCTM','luaD_rawrunprotected','lua_close','close_state','f_end_frame','rencache_end_frame','ren_update_rects','renwin_update_rects','lua_pcallk','luaB_xpcall','dynCall_vii','f_wait_event']"  --preload-file data -s INITIAL_MEMORY=33554432 -s DISABLE_EXCEPTION_CATCHING=1 -s ALLOW_MEMORY_GROWTH=1 --shell-file resources/lite-xl.html
 ```
-<<<<<<< HEAD
 
 ## Deviations from Lite XL
 
@@ -138,8 +134,6 @@ AR=emar CC=emcc ./build.sh -I`$EMSDK/upstream/emscripten/system/bin/sdl2-config 
 * Removed volumunous documentation.
 * Anchorpoints for emscripten.
 * 
-=======
->>>>>>> 6ea59ebc... Removed many things.
 
 ## Licenses
 
