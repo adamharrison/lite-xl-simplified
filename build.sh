@@ -11,6 +11,8 @@ LDFLAGS=" $LDFLAGS -lm -static-libgcc"
 
 [[ "$@" == "clean" ]] && rm -rf lib/SDL/build liblite.a *.o index* $BIN && exit 0
 
+[[ $OSTYPE == 'msys'* || $CC == *'mingw'* ]] && CFLAGS="$CFLAGS -DNTDDI_VERSION=NTDDI_VISTA -D_WIN32_WINNT=_WIN32_WINNT_VISTA"
+
 # Compile SDL separately, because it's the only complicated module.
 if [[ "$@" != *"-lSDL"* && "$@" != *"-sUSE_SDL"* ]]; then
   [ ! -e "lib/SDL/include" ] && echo "Make sure you've cloned submodules. (git submodule update --init --depth=1)" && exit -1
