@@ -128,12 +128,14 @@ AR=emar CC=emcc ./build.sh -I`$EMSDK/upstream/emscripten/system/bin/sdl2-config 
 ## Deviations from Lite XL
 
 * Large build system replaced with a 70SLOC `build.sh` and `git` submodules.
+* Removed volumunous documentation.
+* Anchorpoints for emscripten.
+
+## Deviation from Lite XL for Enhanced Builds
+
 * Compatibilty with luajit.
 * C-written tokenizer that tokenizes several orders of magnitude faster.
 * Removed explicit UTF-8 support, as tokenizer handles it implicitly.
-* Removed volumunous documentation.
-* Anchorpoints for emscripten.
-* 
 
 ## Licenses
 
