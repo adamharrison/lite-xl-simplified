@@ -31,7 +31,7 @@ local lsp = common.merge({
   signature_info = nil,
   completion_info = nil,
 }, config.plugins.lsp)
-lsp.process = process.start({ lsp.server, "--log=verbose", "--offset-encoding=utf-8" }, { stderr = lsp.verbose and process.REDIRECT_PARENT or process.REDIRECT_DISCARD })
+lsp.process = process.start({ lsp.server, "--log=verbose", "--offset-encoding=utf-8" }, { env = { FLAGS = "-I/usr/include/SDL2" }, stderr = lsp.verbose and process.REDIRECT_PARENT or process.REDIRECT_DISCARD })
 config.plugins.autocomplete = false
 
 -- Retrieves at least one command.
@@ -323,6 +323,8 @@ local function lsp_show_autocomplete(dv, on_done)
         local items = { }
         for i, v in ipairs(completions) do 
           local label = v.filterText:gsub("^%s+", "")
+          local detail = v.detail and v.detail:gsub("\n.*", "")
+          if detail and detail:find("%S") then label = label .. ": " .. detail end
           table.insert(items, { label = label, tokens = select(1, tokenizer.tokenize(dv.doc.syntax, label)), textEdit = v.textEdit, selected = {} }) 
         end
         lsp.completion_info = { dv = dv, position = { x = x, y = y }, items = items, tokenize = true, selected = 1, offset = 1 }
@@ -385,9 +387,9 @@ function lsp.set_selections(dv, idx, line1, col1, line2, col2)
   end
 end
 
-local function draw_boxes()
+local function draw_boxes(av)
   local bi = lsp.completion_info or lsp.signature_info
-  if bi then
+  if bi and av == bi.dv then
     local ox, oy = bi.position.x - bi.dv.scroll.x, bi.position.y - bi.dv.scroll.y
     local lh = style.code_font:get_height()
     local height = (style.padding.y * 2 + lh) * math.min(#bi.items, lsp.max_suggested_items)
@@ -452,8 +454,8 @@ end, {
 local function snap_completion_offset()
   if lsp.completion_info.selected < lsp.completion_info.offset then
     lsp.completion_info.offset = lsp.completion_info.selected
-  elseif lsp.completion_info.selected > lsp.completion_info.offset + lsp.max_suggested_items then
-    lsp.completion_info.offset = math.max(lsp.completion_info.selected - lsp.max_suggested_items, 1)
+  elseif lsp.completion_info.selected >= lsp.completion_info.offset + lsp.max_suggested_items then
+    lsp.completion_info.offset = math.max(lsp.completion_info.selected - lsp.max_suggested_items + 1, 1)
   end
 end
 command.add(function() 
