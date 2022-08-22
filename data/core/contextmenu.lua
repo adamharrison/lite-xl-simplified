@@ -128,9 +128,9 @@ end
 
 function ContextMenu:on_selected(item)
   if type(item.command) == "string" then
-    command.perform(item.command)
+    command.perform(item.command, self.position.x, self.position.y)
   else
-    item.command()
+    item.command(self.position.x, self.position.y)
   end
 end
 
