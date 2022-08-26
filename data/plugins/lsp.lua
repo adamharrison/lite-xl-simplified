@@ -31,14 +31,14 @@ local lsp = common.merge({
   signature_info = nil,
   completion_info = nil,
 }, config.plugins.lsp)
-lsp.process = process.start({ lsp.server, "--log=verbose", "--offset-encoding=utf-8" }, { env = { FLAGS = "-I/usr/include/SDL2" }, stderr = lsp.verbose and process.REDIRECT_PARENT or process.REDIRECT_DISCARD })
+lsp.process = process.start({ lsp.server, (lsp.verbose and "--log=verbose" or ""), "--offset-encoding=utf-8" }, { env = { FLAGS = "-I/usr/include/SDL2" }, stderr = lsp.verbose and process.REDIRECT_PARENT or process.REDIRECT_DISCARD })
 config.plugins.autocomplete = false
 
 -- Retrieves at least one command.
 local response_buffer = ""
 function lsp.receive_command()
   local response_start = 1
-  response_buffer = response_buffer .. lsp.process:read_stdout(16777216)
+  response_buffer = response_buffer .. (lsp.process:read_stdout(16777216) or "")
   if response_buffer == "" then return end
   while true do
     local headers = {}
