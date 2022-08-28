@@ -23,6 +23,11 @@
 
 extern SDL_Window *window;
 
+#ifdef _WIN32
+#define PATHSEP '\\'
+#else
+#define PATHSEP '/'
+#endif
 
 static const char* button_name(int button) {
   switch (button) {
@@ -555,9 +560,33 @@ static int f_chdir(lua_State *L) {
   return 0;
 }
 
+extern const char* internal_packed_files[];
+const char* api_retrieve_internal_file(const char* path, int* size) {
+  for (int i = 0; internal_packed_files[i]; i += 3) {
+    if (strcmp(path, internal_packed_files[i]) == 0) {
+      if (size)
+        *size = (int)(long int)internal_packed_files[i+2];
+      return internal_packed_files[i+1];
+    }
+  }
+  return NULL;
+}
 
 static int f_list_dir(lua_State *L) {
-  const char *path = luaL_checkstring(L, 1);
+  size_t path_len;
+  const char *path = luaL_checklstring(L, 1, &path_len);
+
+  int files = 0;
+  lua_newtable(L);
+  for (int i = 0; internal_packed_files[i]; i += 3) {
+    if (strncmp(path, internal_packed_files[i], path_len) == 0 && !strstr(&internal_packed_files[i][path_len+1], "/")) {
+      lua_pushstring(L, &internal_packed_files[i][path_len+1]);
+      lua_rawseti(L, -2, ++files);
+    }
+  }
+  if (files)
+    return 1;
+  lua_pop(L, 1);
 
 #ifdef _WIN32
   lua_settop(L, 1);
@@ -677,10 +706,18 @@ static int f_get_file_info(lua_State *L) {
   struct stat s;
   int err = stat(path, &s);
 #endif
+  const char* override = NULL;
   if (err < 0) {
-    lua_pushnil(L);
-    lua_pushstring(L, strerror(errno));
-    return 2;
+    override = api_retrieve_internal_file(path, NULL);
+    if (!override) {
+      lua_pushnil(L);
+      lua_pushstring(L, strerror(errno));
+      return 2;
+    } else {
+      s.st_mtime = 0;
+      s.st_size = strlen(override);
+      s.st_mode = S_IFREG;
+    }
   }
 
   lua_newtable(L);
@@ -808,9 +845,10 @@ static int f_get_process_id(lua_State *L) {
 
 static int f_get_internal_file(lua_State* L) {
   const char *path = luaL_checkstring(L, 1);
-  const char* contents = api_retrieve_internal_file(path);
+  int size;
+  const char* contents = api_retrieve_internal_file(path, &size);
   if (contents)
-    lua_pushstring(L, contents);
+    lua_pushlstring(L, contents, size);
   else
     lua_pushnil(L);
   return 1;
@@ -819,7 +857,7 @@ static int f_get_internal_file(lua_State* L) {
 
 static int f_has_internal_file(lua_State* L) {
   const char *path = luaL_checkstring(L, 1);
-  lua_pushbool(L, api_retrieve_internal_file(path) != NULL);
+  lua_pushboolean(L, api_retrieve_internal_file(path, NULL) != NULL);
   return 1;
 }
 
@@ -982,11 +1020,6 @@ static int f_load_native_plugin(lua_State *L) {
   return result;
 }
 
-#ifdef _WIN32
-#define PATHSEP '\\'
-#else
-#define PATHSEP '/'
-#endif
 
 /* Special purpose filepath compare function. Corresponds to the
    order used in the TreeView view of the project's files. Returns true iff

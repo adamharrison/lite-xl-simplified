@@ -15,18 +15,24 @@ sub read_folder {
 }  
 read_folder("data"); 
 for my $path (sort(@files)) {
-    print "\"$path\", \"";
+    print "\"%INTERNAL%/$path\", \"";
     open(my $fh, "<", $path) or die $!;
+    my $size = 0;
     if ($path =~ m/\.lua/) {
       while(<$fh>) { 
         chomp; 
-        print ($_ =~ s/\\/\\\\/gr =~ s/"/\\"/gr);
+        my $result = ($_ =~ s/\\/\\\\/gr =~ s/"/\\"/gr);
+        print $result;
         print '\n'; 
+        $size = $size + length($_) + 1;
       }
+      print("\",");
     } else {
       read $fh, my $file_content, -s $fh;
       print(join("", map { "\\x" . unpack("H*", $_) } split(//, $file_content)));
+      $size += length($file_content);
+      print("\",");
     }
-    print "\",\n";
+    print "(void*)$size,\n";
 }
-print("(void*)0, (void*)0 };")
+print("(void*)0, (void*)0, (void*)0 };")
