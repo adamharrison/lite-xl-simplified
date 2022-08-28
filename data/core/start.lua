@@ -33,14 +33,48 @@ package.cpath =
   DATADIR .. '/?/init.' .. suffix .. ";"
 
 package.native_plugins = {}
-package.searchers = { package.searchers[1], package.searchers[2], function(modname)
-  local path = package.searchpath(modname, package.cpath)
-  if not path then return nil end
-  return system.load_native_plugin, path
+local searchers = package.searchers and "searchers" or "loaders"
+
+
+local function iterate_paths(paths, modname, callback)
+  local s = 1
+  return function() 
+    if s > #paths then return nil end
+    local e = paths:find(";", s) or (#paths+1)
+    local module_path = modname:gsub("%.", "/")
+    local path = paths:sub(s, e - 1):gsub("?", module_path)
+    s = e + 1
+    return path
+  end
+end
+
+
+loadstring = loadstring or load
+package[searchers] = { function (modname) 
+  for path in iterate_paths(package.path, modname) do
+    local internal_file = system.get_internal_file(path)
+    if internal_file then return function() return loadstring(internal_file, path)() end, path end
+  end
+  return nil
+end, package[searchers][1], package[searchers][2], function(modname)
+  for path in iterate_paths(package.path, modname) do
+    if system.get_file_info(path) then return system.load_native_plugin, path end
+  end
+  return nil
 end }
 
 table.pack = table.pack or pack or function(...) return {...} end
 table.unpack = table.unpack or unpack
+
+-- For internal files, to let plugins loading work.
+local old_io_lines = io.lines
+io.lines = function(path)
+  if type(path) == "string" and path:find(DATADIR, 1, true) == 1 then
+    local internal_file = system.get_internal_file(path)
+    if internal_file then return internal_file:gmatch("([^\n]*)\n?") end
+  end
+  return old_io_lines(path)
+end
 
 bit32 = bit32 or require "core.bit"
 
