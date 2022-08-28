@@ -176,7 +176,7 @@ init_lua:
     "  local prefix = EXEFILE:match('^(.*)" LITE_PATHSEP_PATTERN "bin$')\n"
     #if LITE_ALL_IN_ONE
     "  DATADIR = '%INTERNAL%/data'\n"
-    "  (load or loadstring)(system.get_internal_file(DATADIR .. '/core/start.lua'), 'data/core/start.lua')()\n"
+    "  (loadstring or load)(system.get_internal_file(DATADIR .. '/core/start.lua'), 'data/core/start.lua')()\n"
     #else
     "  DATADIR = MACOS_RESOURCES or (prefix and (prefix .. '/share/lite-xl') or (EXEDIR .. '/data'))\n"
     "  dofile(DATADIR .. '/core/start.lua')\n"
