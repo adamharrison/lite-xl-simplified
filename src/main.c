@@ -193,6 +193,7 @@ init_lua:
   lua_pushstring(L, exename);
   lua_setglobal(L, "EXEFILE");
 
+
 #ifdef __APPLE__
   enable_momentum_scroll();
   #ifdef MACOS_USE_BUNDLE
@@ -205,9 +206,15 @@ init_lua:
     "xpcall(function()\n"
     "  VERSION = '" LITE_VERSION "'\n"
     "  HOME = os.getenv('" LITE_OS_HOME "')\n"
-    "  local exedir = EXEFILE:match('^(.*)" LITE_PATHSEP_PATTERN LITE_NONPATHSEP_PATTERN "$')\n"
-    "  local prefix = exedir:match('^(.*)" LITE_PATHSEP_PATTERN "bin$')\n"
-    "  dofile((MACOS_RESOURCES or (prefix and prefix .. '/share/lite-xl' or exedir .. '/data')) .. '/core/start.lua')\n"
+    "  EXEDIR = EXEFILE:match('^(.*)" LITE_PATHSEP_PATTERN LITE_NONPATHSEP_PATTERN "$')\n"
+    "  local prefix = EXEFILE:match('^(.*)" LITE_PATHSEP_PATTERN "bin$')\n"
+    #if LITE_ALL_IN_ONE
+    "  DATADIR = '%INTERNAL%/data'\n"
+    "  (loadstring or load)(system.get_internal_file(DATADIR .. '/core/start.lua'), 'data/core/start.lua')()\n"
+    #else
+    "  DATADIR = MACOS_RESOURCES or (prefix and (prefix .. '/share/lite-xl') or (EXEDIR .. '/data'))\n"
+    "  dofile(DATADIR .. '/core/start.lua')\n"
+    #endif
     "  core = require(os.getenv('LITE_XL_RUNTIME') or 'core')\n"
     "  core.init()\n"
     "  core.run()\n"

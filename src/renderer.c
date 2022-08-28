@@ -205,10 +205,19 @@ static void font_clear_glyph_cache(RenFont* font) {
   }
 }
 
+const char* retrieve_internal_file(const char* path, int* size);
 RenFont* ren_font_load(const char* path, float size, ERenFontAntialiasing antialiasing, ERenFontHinting hinting, unsigned char style) {
   FT_Face face;
-  if (FT_New_Face( library, path, 0, &face))
-    return NULL;
+  int internal_size;
+  const char* internal_file = retrieve_internal_file(path, &internal_size);
+  if (internal_file) {
+    FT_Open_Args args = { FT_OPEN_MEMORY, internal_file, internal_size, (char*)path };
+    if (FT_Open_Face( library, &args, 0, &face))
+      return NULL;
+  } else {
+    if (FT_New_Face( library, path, 0, &face))
+      return NULL;
+  }
   const int surface_scale = renwin_surface_scale(&window_renderer);
   if (FT_Set_Pixel_Sizes(face, 0, (int)(size*surface_scale)))
     goto failure;
