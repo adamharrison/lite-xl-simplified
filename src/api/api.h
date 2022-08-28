@@ -16,5 +16,6 @@
 #define API_CONSTANT_DEFINE(L, idx, key, n) (lua_pushnumber(L, n), lua_setfield(L, idx - 1, key))
 
 void api_load_libs(lua_State *L);
+const char* api_retrieve_internal_file(const char* path);
 
 #endif

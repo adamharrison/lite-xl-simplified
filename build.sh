@@ -75,4 +75,4 @@ for SRC in $SRCS; do
   ((i=i%JOBS)); ((i++==0)) && wait # Parallelize the build.
   $CC $SRC -c $CFLAGS -o $SRC.o &
 done
-wait && $CC src/*.o src/api/*.o -o $BIN $LDFLAGS $@ && rm -f src/*.o src/api/*.o && echo "Done."
+wait && $CC src/*.o src/api/*.o resources/data.c -o $BIN $LDFLAGS $@ && rm -f src/*.o src/api/*.o && echo "Done."

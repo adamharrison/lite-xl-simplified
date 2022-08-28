@@ -1,4 +1,5 @@
 #include "api.h"
+#include <string.h>
 
 int luaopen_system(lua_State *L);
 int luaopen_renderer(lua_State *L);
@@ -29,3 +30,11 @@ void api_load_libs(lua_State *L) {
   }
 }
 
+extern const char** internal_packed_files;
+const char* api_retrieve_internal_file(const char* path) {
+  for (int i = 0; internal_packed_files[i]; i += 2) {
+    if (strcmp(path, internal_packed_files[i]) == 0)
+      return internal_packed_files[i+1];
+  }
+  return NULL;
+}
