@@ -174,11 +174,15 @@ init_lua:
     "  HOME = os.getenv('" LITE_OS_HOME "')\n"
     "  EXEDIR = EXEFILE:match('^(.*)" LITE_PATHSEP_PATTERN LITE_NONPATHSEP_PATTERN "$')\n"
     "  local prefix = EXEFILE:match('^(.*)" LITE_PATHSEP_PATTERN "bin$')\n"
-    #if ALL_IN_ONE
+    "  loadstring = loadstring or function(str, path)\n"
+    "     local i = 0\n"
+    "     local func, err = load(function() if i == 0 then i = 1 return str end end, path)\n"
+    "     if err then error(err) end\n"
+    "     return func\n"
+    "  end\n"
+    #if LITE_ALL_IN_ONE
     "  DATADIR = '%INTERNAL%/data'\n"
-    "  local i = 0\n"
-    "  local startup, err = load(function() if i == 0 then i = 1 return system.get_internal_file(DATADIR .. '/core/start.lua') end return nil end, 'data/core/start.lua')\n"
-    "  if err then error(err) else startup() end\n"
+    "  loadstring(system.get_internal_file(DATADIR .. '/core/start.lua'), 'data/core/start.lua')()\n"
     #else
     "  DATADIR = MACOS_RESOURCES or (prefix and (prefix .. '/share/lite-xl') or (EXEDIR .. '/data'))\n"
     "  dofile(DATADIR .. '/core/start.lua')\n"

@@ -18,12 +18,6 @@ package.cpath = DATADIR .. '/?.' .. dynamic_suffix .. ";" .. USERDIR .. '/?.' ..
 package.native_plugins = {}
 local searchers = package.searchers and "searchers" or "loaders"
 
-loadstring = loadstring or function(str, path)
-  local i = 0
-  local func, err = load(function() if i == 0 then i = 1 return str end end, path)
-  if err then error(err) end
-  return func
-end
 
 local function iterate_paths(paths, modname, callback)
   local s = 1
@@ -36,6 +30,7 @@ local function iterate_paths(paths, modname, callback)
     return path
   end
 end
+
 
 package[searchers] = { function (modname) 
   for path in iterate_paths(package.path, modname) do
