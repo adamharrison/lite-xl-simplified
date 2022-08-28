@@ -933,13 +933,11 @@ local function get_plugin_details(filename)
     info = system.get_file_info(filename)
   end
   if not info or not filename:match("%.lua$") then return false end
-  local f = io.open(filename, "r")
-  if not f then return false end
   local priority = false
   local version_match = false
   local major, minor, patch
 
-  for line in f:lines() do
+  for line in io.lines(filename) do
     if not version_match then
       local _major, _minor, _patch = mod_version_regex:match(line)
       if _major then
@@ -967,7 +965,6 @@ local function get_plugin_details(filename)
       break
     end
   end
-  f:close()
   return true, {
     version_match = version_match,
     version = major and {major, minor, patch} or {},

@@ -3,3 +3,4 @@ lite-xl*
 liblite*
 user
 index*
+src/data.c

@@ -37,6 +37,14 @@
 #endif
 #endif
 
+extern SDL_Window *window;
+
+#ifdef _WIN32
+#define PATHSEP '\\'
+#else
+#define PATHSEP '/'
+#endif
+
 static const char* button_name(int button) {
   switch (button) {
     case SDL_BUTTON_LEFT   : return "left";
@@ -144,6 +152,7 @@ static const char *get_key_name(const SDL_Event *e, char *buf) {
 }
 
 #ifdef _WIN32
+#define UTFCONV_ERROR_INVALID_CONVERSION "Input contains invalid byte sequences."
 static char *win32_error(DWORD rc) {
   LPSTR message;
   FormatMessage(
@@ -568,6 +577,52 @@ static int f_show_fatal_error(lua_State *L) {
   return 0;
 }
 
+#if _WIN32
+static LPWSTR utfconv_utf8towc(const char *str) {
+  LPWSTR output;
+  int len;
+
+  // len includes \0
+  len = MultiByteToWideChar(CP_UTF8, 0, str, -1, NULL, 0);
+  if (len == 0)
+    return NULL;
+
+  output = (LPWSTR) malloc(sizeof(WCHAR) * len);
+  if (output == NULL)
+    return NULL;
+
+  len = MultiByteToWideChar(CP_UTF8, 0, str, -1, output, len);
+  if (len == 0) {
+    free(output);
+    return NULL;
+  }
+
+  return output;
+}
+
+static char *utfconv_wctoutf8(LPCWSTR str) {
+  char *output;
+  int len;
+
+  // len includes \0
+  len = WideCharToMultiByte(CP_UTF8, 0, str, -1, NULL, 0, NULL, NULL);
+  if (len == 0)
+    return NULL;
+
+  output = (char *) malloc(sizeof(char) * len);
+  if (output == NULL)
+    return NULL;
+
+  len = WideCharToMultiByte(CP_UTF8, 0, str, -1, output, len, NULL, NULL);
+  if (len == 0) {
+    free(output);
+    return NULL;
+  }
+
+  return output;
+}
+#endif
+
 
 // removes an empty directory
 static int f_rmdir(lua_State *L) {
@@ -614,9 +669,37 @@ static int f_chdir(lua_State *L) {
   return 0;
 }
 
+extern const char* internal_packed_files[];
+const char* retrieve_internal_file(const char* path, int* size) {
+  #if LITE_ALL_IN_ONE
+    for (int i = 0; internal_packed_files[i]; i += 3) {
+      if (strcmp(path, internal_packed_files[i]) == 0) {
+        if (size)
+          *size = (int)(long int)internal_packed_files[i+2];
+        return internal_packed_files[i+1];
+      }
+    }
+  #endif
+  return NULL;
+}
 
 static int f_list_dir(lua_State *L) {
-  const char *path = luaL_checkstring(L, 1);
+  size_t path_len;
+  const char *path = luaL_checklstring(L, 1, &path_len);
+
+#if LITE_ALL_IN_ONE
+  int files = 0;
+  lua_newtable(L);
+  for (int i = 0; internal_packed_files[i]; i += 3) {
+    if (strncmp(path, internal_packed_files[i], path_len) == 0 && !strstr(&internal_packed_files[i][path_len+1], "/")) {
+      lua_pushstring(L, &internal_packed_files[i][path_len+1]);
+      lua_rawseti(L, -2, ++files);
+    }
+  }
+  if (files)
+    return 1;
+  lua_pop(L, 1);
+#endif
 
 #ifdef _WIN32
   lua_settop(L, 1);
@@ -736,10 +819,18 @@ static int f_get_file_info(lua_State *L) {
   struct stat s;
   int err = stat(path, &s);
 #endif
+  const char* override = NULL;
   if (err < 0) {
-    lua_pushnil(L);
-    lua_pushstring(L, strerror(errno));
-    return 2;
+    override = retrieve_internal_file(path, NULL);
+    if (!override) {
+      lua_pushnil(L);
+      lua_pushstring(L, strerror(errno));
+      return 2;
+    } else {
+      s.st_mtime = 0;
+      s.st_size = strlen(override);
+      s.st_mode = S_IFREG;
+    }
   }
 
   lua_newtable(L);
@@ -861,6 +952,18 @@ static int f_get_process_id(lua_State *L) {
 #else
   lua_pushinteger(L, getpid());
 #endif
+  return 1;
+}
+
+
+static int f_get_internal_file(lua_State* L) {
+  const char *path = luaL_checkstring(L, 1);
+  int size;
+  const char* contents = retrieve_internal_file(path, &size);
+  if (contents)
+    lua_pushlstring(L, contents, size);
+  else
+    lua_pushnil(L);
   return 1;
 }
 
@@ -1062,11 +1165,6 @@ static int f_load_native_plugin(lua_State *L) {
   return result;
 }
 
-#ifdef _WIN32
-#define PATHSEP '\\'
-#else
-#define PATHSEP '/'
-#endif
 
 /* Special purpose filepath compare function. Corresponds to the
    order used in the TreeView view of the project's files. Returns true iff
@@ -1188,6 +1286,7 @@ static const luaL_Reg lib[] = {
   { "get_clipboard",       f_get_clipboard       },
   { "set_clipboard",       f_set_clipboard       },
   { "get_process_id",      f_get_process_id      },
+  { "get_internal_file",   f_get_internal_file   },
   { "get_time",            f_get_time            },
   { "sleep",               f_sleep               },
   { "exec",                f_exec                },

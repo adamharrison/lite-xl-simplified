@@ -214,9 +214,14 @@ static void font_clear_glyph_cache(RenFont* font) {
   }
 }
 
+const char* retrieve_internal_file(const char* path, int* size);
 RenFont* ren_font_load(RenWindow *window_renderer, const char* path, float size, ERenFontAntialiasing antialiasing, ERenFontHinting hinting, unsigned char style) {
   FT_Face face = NULL;
-
+  if (internal_file) {
+    FT_Open_Args args = { FT_OPEN_MEMORY, internal_file, internal_size, (char*)path };
+    if (FT_Open_Face( library, &args, 0, &face))
+      return NULL;
+  } else {
 #ifdef _WIN32
 
   HANDLE file = INVALID_HANDLE_VALUE;
@@ -256,7 +261,7 @@ RenFont* ren_font_load(RenWindow *window_renderer, const char* path, float size,
     return NULL;
 
 #endif
-
+  }
   const int surface_scale = renwin_get_surface(window_renderer).scale;
   if (FT_Set_Pixel_Sizes(face, 0, (int)(size*surface_scale)))
     goto failure;
