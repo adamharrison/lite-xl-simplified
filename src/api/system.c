@@ -855,14 +855,6 @@ static int f_get_internal_file(lua_State* L) {
 }
 
 
-static int f_has_internal_file(lua_State* L) {
-  const char *path = luaL_checkstring(L, 1);
-  lua_pushboolean(L, api_retrieve_internal_file(path, NULL) != NULL);
-  return 1;
-}
-
-
-
 static int f_get_time(lua_State *L) {
   double n = SDL_GetPerformanceCounter() / (double) SDL_GetPerformanceFrequency();
   lua_pushnumber(L, n);
@@ -1096,7 +1088,6 @@ static const luaL_Reg lib[] = {
   { "set_clipboard",       f_set_clipboard       },
   { "get_process_id",      f_get_process_id      },
   { "get_internal_file",   f_get_internal_file   },
-  { "has_internal_file",   f_has_internal_file   },
   { "get_time",            f_get_time            },
   { "sleep",               f_sleep               },
   { "exec",                f_exec                },

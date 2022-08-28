@@ -26,13 +26,14 @@ package[searchers] = { function (modname)
     local e = package.path:find(";", s) or (#package.path+1)
     local module_path = modname:gsub("%.", PATHSEP)
     local path = package.path:sub(s, e - 1):gsub("?", module_path)
-    if system.has_internal_file(path) then
+    local internal_file = system.get_internal_file(path)
+    if internal_file then
       return function(modname)
         local i = 0
         local func, err = load(function() 
           if i == 0 then 
             i = 1 
-            return system.get_internal_file(path)
+            return internal_file
           end
           return nil
         end, path)
@@ -58,30 +59,32 @@ end }
 
 local old_io_open = io.open
 io.open = function(path, mode)
-  if type(path) == "string" and path:find(DATADIR, 1, true) == 1 and system.has_internal_file(path) then
-    local stream = {
-      offset = 0,
-      str = system.get_internal_file(path),
-      close = function()  end,
-      lines = function(self)
-        if self.offset > #self.str then return nil end
-        local lines = { }
-        local ns, ne = self.str:find("\r?\n", self.offset)
-        if not ns then 
+  if type(path) == "string" and path:find(DATADIR, 1, true) == 1 then
+    local internal_file = system.get_internal_file(path)
+    if internal_file then
+      return {
+        offset = 0,
+        str = system.get_internal_file(path),
+        close = function()  end,
+        lines = function(self)
+          if self.offset > #self.str then return nil end
+          local lines = { }
+          local ns, ne = self.str:find("\r?\n", self.offset)
+          if not ns then 
+            return function() 
+              local str = self.str:sub(self.offset) 
+              self.offset = #self.str + 1
+              return str
+            end 
+          end
           return function() 
-            local str = self.str:sub(self.offset) 
-            self.offset = #self.str + 1
+            local str = self.str:sub(self.offset, ns - 1)
+            self.offset = ne + 1
             return str
-          end 
+          end
         end
-        return function() 
-          local str = self.str:sub(self.offset, ns - 1)
-          self.offset = ne + 1
-          return str
-        end
-      end
-    }
-    return stream
+      }
+    end
   end
   return old_io_open(path, mode)
 end
