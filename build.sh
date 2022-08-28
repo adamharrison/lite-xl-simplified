@@ -9,7 +9,7 @@
 CFLAGS=" $CFLAGS $@ -Isrc -fno-strict-aliasing"
 LDFLAGS=" $LDFLAGS -lm -static-libgcc"
 
-[[ "$@" == "clean" ]] && rm -rf lib/SDL/build liblite.a *.o index* $BIN && exit 0
+[[ "$@" == "clean" ]] && rm -rf lib/SDL/build liblite.a *.o index* $BIN src/data.c && exit 0
 
 [[ $OSTYPE == 'msys'* || $CC == *'mingw'* ]] && CFLAGS="$CFLAGS -DNTDDI_VERSION=NTDDI_VISTA -D_WIN32_WINNT=_WIN32_WINNT_VISTA"
 
@@ -75,4 +75,4 @@ for SRC in $SRCS; do
   ((i=i%JOBS)); ((i++==0)) && wait # Parallelize the build.
   $CC $SRC -c $CFLAGS -o $SRC.o &
 done
-wait && $CC src/*.o src/api/*.o resources/data.c -o $BIN $LDFLAGS $@ && rm -f src/*.o src/api/*.o && echo "Done."
+wait && $CC src/*.o src/api/*.o -o $BIN $LDFLAGS $@ && rm -f src/*.o src/api/*.o && echo "Done."

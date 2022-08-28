@@ -561,14 +561,16 @@ static int f_chdir(lua_State *L) {
 }
 
 extern const char* internal_packed_files[];
-const char* api_retrieve_internal_file(const char* path, int* size) {
-  for (int i = 0; internal_packed_files[i]; i += 3) {
-    if (strcmp(path, internal_packed_files[i]) == 0) {
-      if (size)
-        *size = (int)(long int)internal_packed_files[i+2];
-      return internal_packed_files[i+1];
+const char* retrieve_internal_file(const char* path, int* size) {
+  #if ALL_IN_ONE
+    for (int i = 0; internal_packed_files[i]; i += 3) {
+      if (strcmp(path, internal_packed_files[i]) == 0) {
+        if (size)
+          *size = (int)(long int)internal_packed_files[i+2];
+        return internal_packed_files[i+1];
+      }
     }
-  }
+  #endif
   return NULL;
 }
 
@@ -576,6 +578,7 @@ static int f_list_dir(lua_State *L) {
   size_t path_len;
   const char *path = luaL_checklstring(L, 1, &path_len);
 
+#if ALL_IN_ONE
   int files = 0;
   lua_newtable(L);
   for (int i = 0; internal_packed_files[i]; i += 3) {
@@ -587,6 +590,7 @@ static int f_list_dir(lua_State *L) {
   if (files)
     return 1;
   lua_pop(L, 1);
+#endif
 
 #ifdef _WIN32
   lua_settop(L, 1);
@@ -708,7 +712,7 @@ static int f_get_file_info(lua_State *L) {
 #endif
   const char* override = NULL;
   if (err < 0) {
-    override = api_retrieve_internal_file(path, NULL);
+    override = retrieve_internal_file(path, NULL);
     if (!override) {
       lua_pushnil(L);
       lua_pushstring(L, strerror(errno));
@@ -846,7 +850,7 @@ static int f_get_process_id(lua_State *L) {
 static int f_get_internal_file(lua_State* L) {
   const char *path = luaL_checkstring(L, 1);
   int size;
-  const char* contents = api_retrieve_internal_file(path, &size);
+  const char* contents = retrieve_internal_file(path, &size);
   if (contents)
     lua_pushlstring(L, contents, size);
   else
