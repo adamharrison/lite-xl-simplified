@@ -35,7 +35,7 @@ end
 package[searchers] = { function (modname) 
   for path in iterate_paths(package.path, modname) do
     local internal_file = system.get_internal_file(path)
-    if internal_file then return function() return (load or loadstring)(internal_file, path)() end, path end
+    if internal_file then return function() return (loadstring or load)(internal_file, path)() end, path end
   end
   return nil
 end, package[searchers][1], package[searchers][2], function(modname)
