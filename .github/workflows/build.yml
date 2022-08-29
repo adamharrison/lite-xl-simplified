@@ -27,7 +27,7 @@ jobs:
           dpkg-deb --build --root-owner-group $NAME
       - name: Build Windows
         run: |
-          sudo apt-get install mingw-w64 && ./build.sh clean && CC=i686-w64-mingw32-gcc AR=i686-w64-mingw32-gcc-ar SDL_CONFIGURE="--host=i686-w64-mingw32" ./build.sh-DLITE_VERSION='"'$VERSION-win32-`git rev-parse --short HEAD`'"' && zip -r lite-xl-$VERSION-x86_64-win32.zip lite-xl.exe data
+          sudo apt-get install mingw-w64 && ./build.sh clean && CC=i686-w64-mingw32-gcc AR=i686-w64-mingw32-gcc-ar SDL_CONFIGURE="--host=i686-w64-mingw32" ./build.sh -DLITE_VERSION='"'$VERSION-win32-`git rev-parse --short HEAD`'"' && zip -r lite-xl-$VERSION-x86_64-win32.zip lite-xl.exe data
           CC=i686-w64-mingw32-gcc AR=i686-w64-mingw32-gcc-ar SDL_CONFIGURE="--host=i686-w64-mingw32" ./build.sh -DLITE_ALL_IN_ONE  -DLITE_VERSION='"'$VERSION-x86_64-win32-`git rev-parse --short HEAD`'"' && zip -r lite-xl-$VERSION-x86_64-win32-allinone.zip lite-xl.exe
       - name: Build Linux Enhanced
         run: |
