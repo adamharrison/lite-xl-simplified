@@ -33,14 +33,14 @@ jobs:
           rm -f liblite.a && ./build.sh -LLuaJIT/src -lluajit -ILuaJIT/src -DLITE_VERSION='"'$VERSION-x86_64-linux-enhanced-`git rev-parse --short HEAD`'"' && tar -czvf lite-xl-$VERSION-x86_64-linux-enhanced.tar.gz lite-xl data
           ./build.sh -DLITE_ALL_IN_ONE -LLuaJIT/src -lluajit -ILuaJIT/src -DLITE_VERSION='"'$VERSION-x86_64-linux-enhanced-allinone-`git rev-parse --short HEAD`'"' && tar -czvf lite-xl-$VERSION-x86_64-linux-enhanced-allinone.tar.gz lite-xl
       - name: Build Windows
-        env: { CC: "i686-w64-mingw32-gcc", AR: "i686-w64-mingw32-gcc-ar" SDL_CONFIGURE: "--host=i686-w64-mingw32" }
+        env: { CC: "i686-w64-mingw32-gcc", AR: "i686-w64-mingw32-gcc-ar", SDL_CONFIGURE: "--host=i686-w64-mingw32" }
         run: |
           git checkout master && sudo apt-get install mingw-w64 libc6-dev-i386
           ./pack-data data/* data/*/* data/*/*/* > src/data.c
           ./build.sh clean && ./build.sh -DLITE_VERSION='"'$VERSION-x86_64-win32-`git rev-parse --short HEAD`'"' && zip -r lite-xl-$VERSION-x86_64-win32.zip lite-xl.exe data
           ./build.sh -DLITE_ALL_IN_ONE -DLITE_VERSION='"'$VERSION-x86_64-win32-allinone-`git rev-parse --short HEAD`'"' && zip -r lite-xl-$VERSION-x86_64-win32-allinone.zip lite-xl.exe
       - name: Build Windows Enhanced
-        env: { CC: "i686-w64-mingw32-gcc", AR: "i686-w64-mingw32-gcc-ar" SDL_CONFIGURE: "--host=i686-w64-mingw32" }
+        env: { CC: "i686-w64-mingw32-gcc", AR: "i686-w64-mingw32-gcc-ar", SDL_CONFIGURE: "--host=i686-w64-mingw32" }
         run: |
           git checkout enhanced && cd LuaJIT && make clean && make HOST_CC="gcc -m32" CROSS=i686-w64-mingw32- TARGET_SYS=Windows BUILDMODE=static && cd ..
           ./pack-data data/* data/*/* data/*/*/* > src/data.c
