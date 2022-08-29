@@ -12,7 +12,6 @@
   #include <direct.h>
   #include <windows.h>
   #include <fileapi.h>
-  #include "../utfconv.h"
 
   // Windows does not define the S_ISREG and S_ISDIR macros in stat.h, so we do.
   // We have to define _CRT_INTERNAL_NONSTDC_NAMES 1 before #including sys/stat.h
