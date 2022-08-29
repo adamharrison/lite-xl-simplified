@@ -16,7 +16,7 @@ jobs:
         run: gcc resources/pack.c -o pack-data && ./pack-data data/* data/*/* data/*/*/* > src/data.c
       - name: Build Linux
         run: |
-          ./build.sh -DLITE_ALL_IN_ONE -DLITE_VERSION='"'$VERSION-x86_64-linux-`git rev-parse --short HEAD`'"' && tar -czvf lite-xl-$VERSION-x86_64-linux-allinone.tar.gz lite-xl
+          ./build.sh -DLITE_ALL_IN_ONE -DLITE_VERSION='"'$VERSION-x86_64-linux-allinone-`git rev-parse --short HEAD`'"' && tar -czvf lite-xl-$VERSION-x86_64-linux-allinone.tar.gz lite-xl
           ./build.sh -DLITE_VERSION='"'$VERSION-x86_64-linux-`git rev-parse --short HEAD`'"' && tar -czvf lite-xl-$VERSION-x86_64-linux.tar.gz lite-xl data
       - name: Package Debian/Ubuntu
         env: { REV: "1", ARCH: "amd64", DESCRIPTION: "A lightweight and extensible text editor.", MAINTAINER: "Adam Harrison <adamdharrison@gmail.com>" }
@@ -27,18 +27,18 @@ jobs:
           dpkg-deb --build --root-owner-group $NAME
       - name: Build Windows
         run: |
-          sudo apt-get install mingw-w64 && ./build.sh clean && CC=i686-w64-mingw32-gcc AR=i686-w64-mingw32-gcc-ar SDL_CONFIGURE="--host=i686-w64-mingw32" ./build.sh-DLITE_VERSION='"'$VERSION-win32-`git rev-parse --short HEAD`'"' && zip -r lite-xl-$VERSION-x86_64-win32.zip lite-xl.exe data
-          CC=i686-w64-mingw32-gcc AR=i686-w64-mingw32-gcc-ar SDL_CONFIGURE="--host=i686-w64-mingw32" ./build.sh -DLITE_ALL_IN_ONE  -DLITE_VERSION='"'$VERSION-x86_64-win32-`git rev-parse --short HEAD`'"' && zip -r lite-xl-$VERSION-x86_64-win32-allinone.zip lite-xl.exe
+          sudo apt-get install mingw-w64 && ./build.sh clean && CC=i686-w64-mingw32-gcc AR=i686-w64-mingw32-gcc-ar SDL_CONFIGURE="--host=i686-w64-mingw32" ./build.sh-DLITE_VERSION='"'$VERSION-x86_64-win32-`git rev-parse --short HEAD`'"' && zip -r lite-xl-$VERSION-x86_64-win32.zip lite-xl.exe data
+          CC=i686-w64-mingw32-gcc AR=i686-w64-mingw32-gcc-ar SDL_CONFIGURE="--host=i686-w64-mingw32" ./build.sh -DLITE_ALL_IN_ONE  -DLITE_VERSION='"'$VERSION-x86_64-win32-allinone-`git rev-parse --short HEAD`'"' && zip -r lite-xl-$VERSION-x86_64-win32-allinone.zip lite-xl.exe
       - name: Build Linux Enhanced
         run: |
             git checkout enhanced && git clone https://github.com/LuaJIT/LuaJIT.git --depth=1 && cd LuaJIT && make BUILDMODE=static && cd ..
-            ./build.sh clean && ./build.sh -LLuaJIT/src -lluajit -ILuaJIT/src -DLITE_VERSION='"'$VERSION-x86_64-linux-`git rev-parse --short HEAD`'"' && tar -czvf lite-xl-$VERSION-x86_64-linux-enhanced.tar.gz lite-xl data
-            ./build.sh -DLITE_ALL_IN_ONE -LLuaJIT/src -lluajit -ILuaJIT/src -DLITE_VERSION='"'$VERSION-x86_64-linux-`git rev-parse --short HEAD`'"' && tar -czvf lite-xl-$VERSION-x86_64-linux-enhanced-allinone.tar.gz lite-xl
+            ./build.sh clean && ./build.sh -LLuaJIT/src -lluajit -ILuaJIT/src -DLITE_VERSION='"'$VERSION-x86_64-linux-enhanced-`git rev-parse --short HEAD`'"' && tar -czvf lite-xl-$VERSION-x86_64-linux-enhanced.tar.gz lite-xl data
+            ./build.sh -DLITE_ALL_IN_ONE -LLuaJIT/src -lluajit -ILuaJIT/src -DLITE_VERSION='"'$VERSION-x86_64-linux-enhanced-allinone-`git rev-parse --short HEAD`'"' && tar -czvf lite-xl-$VERSION-x86_64-linux-enhanced-allinone.tar.gz lite-xl
       - name: Build Windows Enhanced
         run: |
             sudo apt-get install mingw-w64 libc6-dev-i386 && cd LuaJIT && make clean && make HOST_CC="gcc -m32" CROSS=i686-w64-mingw32- TARGET_SYS=Windows BUILDMODE=static && cd ..
-            ./build.sh clean && CC=i686-w64-mingw32-gcc AR=i686-w64-mingw32-gcc-ar SDL_CONFIGURE="--host=i686-w64-mingw32" ./build.sh -LLuaJIT/src -lluajit -ILuaJIT/src -DLITE_VERSION='"'$VERSION-win32-`git rev-parse --short HEAD`'"' && zip -r lite-xl-$VERSION-x86_64-win32-enhanced.zip lite-xl.exe data
-            CC=i686-w64-mingw32-gcc AR=i686-w64-mingw32-gcc-ar SDL_CONFIGURE="--host=i686-w64-mingw32" ./build.sh -DLITE_ALL_IN_ONE -LLuaJIT/src -lluajit -ILuaJIT/src -DLITE_VERSION='"'$VERSION-win32-`git rev-parse --short HEAD`'"' && zip -r lite-xl-$VERSION-x86_64-win32-enhanced-allinone.zip lite-xl.exe
+            ./build.sh clean && CC=i686-w64-mingw32-gcc AR=i686-w64-mingw32-gcc-ar SDL_CONFIGURE="--host=i686-w64-mingw32" ./build.sh -LLuaJIT/src -lluajit -ILuaJIT/src -DLITE_VERSION='"'$VERSION-win32-enhanced-`git rev-parse --short HEAD`'"' && zip -r lite-xl-$VERSION-x86_64-win32-enhanced.zip lite-xl.exe data
+            CC=i686-w64-mingw32-gcc AR=i686-w64-mingw32-gcc-ar SDL_CONFIGURE="--host=i686-w64-mingw32" ./build.sh -DLITE_ALL_IN_ONE -LLuaJIT/src -lluajit -ILuaJIT/src -DLITE_VERSION='"'$VERSION-win32-enhanced-allinone-`git rev-parse --short HEAD`'"' && zip -r lite-xl-$VERSION-x86_64-win32-enhanced-allinone.zip lite-xl.exe
       - name: Create Release
         env: { GITHUB_TOKEN: "${{ github.token }}" }
         run: gh release delete -y continuous || true; gh release create -t 'Continuous Release' continuous *.zip *.tar.gz *.deb
