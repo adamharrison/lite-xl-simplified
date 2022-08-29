@@ -12,8 +12,12 @@ jobs:
           fetch-depth: 0
       - name: Clone Submodules
         run: git submodule update --init --depth=1
+      - name: Pack Data
+        run: gcc resources/pack.c -o pack-data && ./pack-data data/* data/*/* data/*/*/* > src/data.c
       - name: Build Linux
-        run: ./build.sh -DLITE_VERSION='"'$VERSION-linux-`git rev-parse --short HEAD`'"' && tar -czvf lite-xl-linux.tar.gz lite-xl data
+        run: |
+          ./build.sh -DLITE_VERSION='"'$VERSION-x86_64-linux-`git rev-parse --short HEAD`'"' && tar -czvf lite-xl-$VERSION-x86_64-linux.tar.gz lite-xl data
+          ./build.sh -DLITE_ALL_IN_ONE -DLITE_VERSION='"'$VERSION-x86_64-linux-`git rev-parse --short HEAD`'"' && tar -czvf lite-xl-$VERSION-x86_64-linux-allinone.tar.gz lite-xl
       - name: Package Debian/Ubuntu
         env: { REV: "1", ARCH: "amd64", DESCRIPTION: "A lightweight and extensible text editor.", MAINTAINER: "Adam Harrison <adamdharrison@gmail.com>" }
         run: |
@@ -22,22 +26,26 @@ jobs:
           printf "Package: lite-xl\nVersion: $VERSION\nArchitecture: $ARCH\nMaintainer: $MAINTAINER\nDescription: $DESCRIPTION\n" > $NAME/DEBIAN/control
           dpkg-deb --build --root-owner-group $NAME
       - name: Build Windows
-        run: sudo apt-get install mingw-w64 && ./build.sh clean && CC=i686-w64-mingw32-gcc AR=i686-w64-mingw32-gcc-ar SDL_CONFIGURE="--host=i686-w64-mingw32" ./build.sh  -DNTDDI_VERSION=NTDDI_VISTA -D_WIN32_WINNT=_WIN32_WINNT_VISTA -DLITE_VERSION='"'$VERSION-win32-`git rev-parse --short HEAD`'"' && zip -r lite-xl-win32.zip lite-xl.exe data
+        run: |
+          sudo apt-get install mingw-w64 && ./build.sh clean && CC=i686-w64-mingw32-gcc AR=i686-w64-mingw32-gcc-ar SDL_CONFIGURE="--host=i686-w64-mingw32" ./build.sh-DLITE_VERSION='"'$VERSION-win32-`git rev-parse --short HEAD`'"' && zip -r lite-xl-$VERSION-x86_64-win32.zip lite-xl.exe data
+          CC=i686-w64-mingw32-gcc AR=i686-w64-mingw32-gcc-ar SDL_CONFIGURE="--host=i686-w64-mingw32" ./build.sh -DLITE_ALL_IN_ONE  -DLITE_VERSION='"'$VERSION-x86_64-win32-`git rev-parse --short HEAD`'"' && zip -r lite-xl-$VERSION-x86_64-win32-allinone.zip lite-xl.exe
       - name: Build Linux Enhanced
         run: |
             git checkout enhanced && git clone https://github.com/LuaJIT/LuaJIT.git --depth=1 && cd LuaJIT && make BUILDMODE=static && cd ..
-            ./build.sh clean && ./build.sh -LLuaJIT/src -lluajit -ILuaJIT/src -DLITE_VERSION='"'$VERSION-linux-`git rev-parse --short HEAD`'"' && tar -czvf lite-xl-enhanced-linux.tar.gz lite-xl data
+            ./build.sh clean && ./build.sh -LLuaJIT/src -lluajit -ILuaJIT/src -DLITE_VERSION='"'$VERSION-x86_64-linux-`git rev-parse --short HEAD`'"' && tar -czvf lite-xl-$VERSION-x86_64-linux-enhanced.tar.gz lite-xl data
+            ./build.sh -DLITE_ALL_IN_ONE -LLuaJIT/src -lluajit -ILuaJIT/src -DLITE_VERSION='"'$VERSION-x86_64-linux-`git rev-parse --short HEAD`'"' && tar -czvf lite-xl-$VERSION-x86_64-linux-enhanced-allinone.tar.gz lite-xl
       - name: Build Windows Enhanced
         run: |
             sudo apt-get install mingw-w64 libc6-dev-i386 && cd LuaJIT && make clean && make HOST_CC="gcc -m32" CROSS=i686-w64-mingw32- TARGET_SYS=Windows BUILDMODE=static && cd ..
-            ./build.sh clean && CC=i686-w64-mingw32-gcc AR=i686-w64-mingw32-gcc-ar SDL_CONFIGURE="--host=i686-w64-mingw32" ./build.sh -LLuaJIT/src -lluajit -ILuaJIT/src  -DNTDDI_VERSION=NTDDI_VISTA -D_WIN32_WINNT=_WIN32_WINNT_VISTA -DLITE_VERSION='"'$VERSION-win32-`git rev-parse --short HEAD`'"' && zip -r lite-xl-enhanced-win32.zip lite-xl.exe data
+            ./build.sh clean && CC=i686-w64-mingw32-gcc AR=i686-w64-mingw32-gcc-ar SDL_CONFIGURE="--host=i686-w64-mingw32" ./build.sh -LLuaJIT/src -lluajit -ILuaJIT/src -DLITE_VERSION='"'$VERSION-win32-`git rev-parse --short HEAD`'"' && zip -r lite-xl-x86_64-win32-enhanced.zip lite-xl.exe data
+            CC=i686-w64-mingw32-gcc AR=i686-w64-mingw32-gcc-ar SDL_CONFIGURE="--host=i686-w64-mingw32" ./build.sh -DLITE_ALL_IN_ONE -LLuaJIT/src -lluajit -ILuaJIT/src -DLITE_VERSION='"'$VERSION-win32-`git rev-parse --short HEAD`'"' && zip -r lite-xl-x86_64-win32-enhanced-allinone.zip lite-xl.exe
       - name: Create Release
         env: { GITHUB_TOKEN: "${{ github.token }}" }
         run: gh release delete -y continuous || true; gh release create -t 'Continuous Release' continuous *.zip *.tar.gz *.deb
       - name: Build Emscripten
         run: |
           git clone https://github.com/emscripten-core/emsdk.git --depth=1 && cd emsdk && ./emsdk install latest && ./emsdk activate latest && source ./emsdk_env.sh && cd ..
-          ./build.sh clean && AR=emar CC=emcc ./build.sh -DLITE_VERSION='"'$VERSION-wasm-`git rev-parse --short HEAD`'"' -I`$EMSDK/upstream/emscripten/system/bin/sdl2-config --cflags` `$EMSDK/upstream/emscripten/system/bin/sdl2-config --libs` -o index.html -s ASYNCIFY -s USE_SDL=2 -s ASYNCIFY_WHITELIST="['main','SDL_WaitEvent','SDL_WaitEventTimeout','SDL_Delay','Emscripten_GLES_SwapWindow','SDL_UpdateWindowSurfaceRects','f_call','luaD_callnoyield','luaV_execute','luaD_precall','precallC','luaD_call','f_sleep','Emscripten_UpdateWindowFramebuffer','luaC_freeallobjects','GCTM','luaD_rawrunprotected','lua_close','close_state','f_end_frame','rencache_end_frame','ren_update_rects','renwin_update_rects','lua_pcallk','luaB_xpcall','dynCall_vii','f_wait_event']"  --preload-file data --preload-file src -s INITIAL_MEMORY=33554432 -s DISABLE_EXCEPTION_CATCHING=1 -s ALLOW_MEMORY_GROWTH=1 --shell-file resources/lite-xl.html
+          rm -f src/data.c && ./build.sh clean && AR=emar CC=emcc ./build.sh -DLITE_VERSION='"'$VERSION-wasm-`git rev-parse --short HEAD`'"' -I`$EMSDK/upstream/emscripten/system/bin/sdl2-config --cflags` `$EMSDK/upstream/emscripten/system/bin/sdl2-config --libs` -o index.html -s ASYNCIFY -s USE_SDL=2 -s ASYNCIFY_WHITELIST="['main','SDL_WaitEvent','SDL_WaitEventTimeout','SDL_Delay','Emscripten_GLES_SwapWindow','SDL_UpdateWindowSurfaceRects','f_call','luaD_callnoyield','luaV_execute','luaD_precall','precallC','luaD_call','f_sleep','Emscripten_UpdateWindowFramebuffer','luaC_freeallobjects','GCTM','luaD_rawrunprotected','lua_close','close_state','f_end_frame','rencache_end_frame','ren_update_rects','renwin_update_rects','lua_pcallk','luaB_xpcall','dynCall_vii','f_wait_event']"  --preload-file data --preload-file src -s INITIAL_MEMORY=33554432 -s DISABLE_EXCEPTION_CATCHING=1 -s ALLOW_MEMORY_GROWTH=1 --shell-file resources/lite-xl.html
       - name: Publish Github Pages
         run: |
           git branch -D gh-pages || true && git checkout --orphan gh-pages && git rm -rf . && touch .nojekyll 
