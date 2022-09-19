@@ -52,7 +52,7 @@ If you are cross compiling, between each build, you should run `./build.sh clean
 From Linux, to compile a windows executable, all you need to do is make sure you have mingw64 (`sudo apt-get install mingw-w64`).
 
 ```
-CC=i686-w64-mingw32-gcc AR=i686-w64-mingw32-gcc-ar SDL_CONFIGURE="--host=i686-w64-mingw32" ./build.sh
+CC=x86_64-w64-mingw32-gcc AR=x86_64-w64-mingw32-gcc-ar SDL_CONFIGURE="--host=x86_64-w64-mingw32" ./build.sh
 ```
 
 #### Linux to MacOS

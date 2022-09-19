@@ -19,8 +19,8 @@ jobs:
           cp lib/lite-xl-plugin-manager/plugins/json.lua data/libraries
           cp -R lib/lite-xl-plugin-manager/plugins/plugin_manager data/plugins
           curl -L https://github.com/adamharrison/lite-xl-plugin-manager/releases/download/v$LPM_VERSION/lpm.x86_64-linux --output lib/lite-xl-plugin-manager/lpm.x86_64-linux
-          curl -L https://github.com/adamharrison/lite-xl-plugin-manager/releases/download/v$LPM_VERSION/lpm.x86_64-linux --output lib/lite-xl-plugin-manager/lpm.x86-windows.exe  
-          chmod +x lib/lite-xl-plugin-manager/lpm.x86_64-linux lib/lite-xl-plugin-manager/lpm.x86-windows.exe
+          curl -L https://github.com/adamharrison/lite-xl-plugin-manager/releases/download/v$LPM_VERSION/lpm.x86_64-linux --output lib/lite-xl-plugin-manager/lpm.x86_64-windows.exe  
+          chmod +x lib/lite-xl-plugin-manager/lpm.x86_64-linux lib/lite-xl-plugin-manager/lpm.x86_64-windows.exe
       - name: Compile Utility & Install Modules
         run: gcc resources/pack.c -o pack-data && sudo apt-get install mingw-w64 libc6-dev-i386
       - name: Build Linux
@@ -42,16 +42,16 @@ jobs:
           printf "Package: lite-xl\nVersion: $VERSION\nArchitecture: $ARCH\nMaintainer: $MAINTAINER\nDescription: $DESCRIPTION\n" > $NAME/DEBIAN/control
           dpkg-deb --build --root-owner-group $NAME
       - name: Build Windows
-        env: { CC: "i686-w64-mingw32-gcc", AR: "i686-w64-mingw32-gcc-ar", SDL_CONFIGURE: "--host=i686-w64-mingw32" }
+        env: { CC: "x86_64-w64-mingw32-gcc", AR: "x86_64-w64-mingw32-gcc-ar", SDL_CONFIGURE: "--host=x86_64-w64-mingw32" }
         run: |
           rm -f data/plugins/plugin_manager/lpm.x86_64-linux
-          cp lib/lite-xl-plugin-manager/lpm.x86-windows.exe data/plugins/plugin_manager
+          cp lib/lite-xl-plugin-manager/lpm.x86_64-windows.exe data/plugins/plugin_manager
           git checkout master && ./build.sh clean && ./pack-data data/* data/*/* data/*/*/* > src/data.c
           ./build.sh -DLITE_VERSION='"'$VERSION-x86_64-win32-`git rev-parse --short HEAD`'"' && zip -r lite-xl-$VERSION-x86_64-win32.zip lite-xl.exe data
           ./build.sh -DLITE_VERSION='"'$VERSION-x86_64-win32-allinone-`git rev-parse --short HEAD`'"' -DLITE_ALL_IN_ONE && zip -r lite-xl-$VERSION-x86_64-win32-allinone.zip lite-xl.exe
           
           git checkout enhanced && ./pack-data data/* data/*/* data/*/*/* > src/data.c && rm -f liblite.a && ./pack-data data/* data/*/* data/*/*/* > src/data.c
-          cd LuaJIT && make clean && make HOST_CC="gcc -m32" CROSS=i686-w64-mingw32- TARGET_SYS=Windows BUILDMODE=static && cd ..
+          cd LuaJIT && make clean && make HOST_CC="gcc -m32" CROSS=x86_64-w64-mingw32- TARGET_SYS=Windows BUILDMODE=static && cd ..
           ./build.sh -LLuaJIT/src -lluajit -ILuaJIT/src -DLITE_VERSION='"'$VERSION-x86_64-win32-enhanced-`git rev-parse --short HEAD`'"' && zip -r lite-xl-$VERSION-x86_64-win32-enhanced.zip lite-xl.exe data
           ./build.sh -LLuaJIT/src -lluajit -ILuaJIT/src -DLITE_VERSION='"'$VERSION-x86_64-win32-enhanced-allinone-`git rev-parse --short HEAD`'"' -DLITE_ALL_IN_ONE && zip -r lite-xl-$VERSION-x86_64-win32-enhanced-allinone.zip lite-xl.exe
           rm -rf data/plugins/plugin_manager data/libraries
