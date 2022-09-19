@@ -19,7 +19,7 @@ jobs:
           cp lib/lite-xl-plugin-manager/plugins/json.lua data/libraries
           cp -R lib/lite-xl-plugin-manager/plugins/plugin_manager data/plugins
           curl -L https://github.com/adamharrison/lite-xl-plugin-manager/releases/download/v$LPM_VERSION/lpm.x86_64-linux --output lib/lite-xl-plugin-manager/lpm.x86_64-linux
-          curl -L https://github.com/adamharrison/lite-xl-plugin-manager/releases/download/v$LPM_VERSION/lpm.x86_64-linux --output lib/lite-xl-plugin-manager/lpm.x86_64-windows.exe  
+          curl -L https://github.com/adamharrison/lite-xl-plugin-manager/releases/download/v$LPM_VERSION/lpm.x86_64-windows --output lib/lite-xl-plugin-manager/lpm.x86_64-windows.exe  
           chmod +x lib/lite-xl-plugin-manager/lpm.x86_64-linux lib/lite-xl-plugin-manager/lpm.x86_64-windows.exe
       - name: Compile Utility & Install Modules
         run: gcc resources/pack.c -o pack-data && sudo apt-get install mingw-w64 libc6-dev-i386
