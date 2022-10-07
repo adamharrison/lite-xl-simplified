@@ -10,10 +10,14 @@ jobs:
         uses: actions/checkout@v3
         with:
           fetch-depth: 0
-      - name: Setup Identity
-        run: git config --global user.name "Github Actions" && git config --global user.email "adamdharrison@gmail.com"
+      - name: Setup Identity & Environment
+        run: |
+          git config --global user.name "Github Actions" && git config --global user.email "adamdharrison@gmail.com"
+          export GIT_REV=`git rev-parse --short HEAD`
       - name: Clone Submodules
-        run: git submodule update --init --depth=1
+        run: |
+          git submodule update --init --depth=1
+          git clone https://github.com/LuaJIT/LuaJIT.git lib/LuaJIT --depth=1 && export LUAJIT_CC='-Llib/LuaJIT/src -lluajit -Ilib/LuaJIT/src'
       - name: Pull Plugin Manager
         run: |
           git clone https://github.com/adamharrison/lite-xl-plugin-manager.git lib/lite-xl-plugin-manager
@@ -21,22 +25,23 @@ jobs:
           curl -L https://github.com/adamharrison/lite-xl-plugin-manager/releases/download/v$LPM_VERSION/lpm.x86_64-linux --output lib/lite-xl-plugin-manager/lpm.x86_64-linux
           curl -L https://github.com/adamharrison/lite-xl-plugin-manager/releases/download/v$LPM_VERSION/lpm.x86_64-windows.exe --output lib/lite-xl-plugin-manager/lpm.x86_64-windows.exe  
           chmod +x lib/lite-xl-plugin-manager/lpm.x86_64-linux lib/lite-xl-plugin-manager/lpm.x86_64-windows.exe
-      - name: Compile & Use Utility & Install Modules 
+      - name: Install Modules & Pack Data
         run: | 
-          sudo apt-get install mingw-w64 libc6-dev-i386
-          gcc resources/pack.c -o pack-data && ./pack-data data/* data/*/* data/*/*/* > /tmp/normal-data.c
-          git merge $ENHANCED_BRANCHES --no-commit && ./pack-data data/* data/*/* data/*/*/* > /tmp/enhanced-data.c
+          sudo apt-get install mingw-w64 libc6-dev-i386 && gcc resources/pack.c -o pack-data 
+          ./pack-data data/* data/*/* data/*/*/* > /tmp/normal-data.c
+          git merge $ENHANCED_BRANCHES --no-commit
+          ./pack-data data/* data/*/* data/*/*/* > /tmp/enhanced-data.c
           cp -R lib/lite-xl-plugin-manager/plugins/plugin_manager data/plugins
-      - name: Build Linux
+      - name: Build Linux (Regular/Enhanced + Normal/All-in-One)
+        env: { PLATFORM: "x86_64-linux" }
         run: |
-          cp lib/lite-xl-plugin-manager/lpm.x86_64-linux data/plugins/plugin_manager && cp /tmp/enhanced-data.c src/data.c
-          git clone https://github.com/LuaJIT/LuaJIT.git --depth=1 && cd LuaJIT && make BUILDMODE=static && cd ..
-          ./build.sh -LLuaJIT/src -lluajit -ILuaJIT/src -DLITE_VERSION='"'$VERSION-x86_64-linux-enhanced-`git rev-parse --short HEAD`'"' && tar -czvf lite-xl-$VERSION-x86_64-linux-enhanced.tar.gz lite-xl data
-          ./build.sh -LLuaJIT/src -lluajit -ILuaJIT/src -DLITE_VERSION='"'$VERSION-x86_64-linux-enhanced-allinone-`git rev-parse --short HEAD`'"' -DLITE_ALL_IN_ONE && tar -czvf lite-xl-$VERSION-x86_64-linux-enhanced-allinone.tar.gz lite-xl
-
+          cp lib/lite-xl-plugin-manager/lpm.$PLATFORM data/plugins/plugin_manager && cp /tmp/enhanced-data.c src/data.c && cd lib/LuaJIT && make BUILDMODE=static && cd ../..
+          # We begin with the enhanced version, because we merged it above, in the previous step.
+          ./build.sh -DLITE_VERSION='"'$VERSION-$PLATFORM-enhanced-$GIT_REV'"' $LUAJIT_CC                            && tar -czvf lite-xl-$VERSION-$PLATFORM-enhanced.tar.gz           lite-xl data
+          ./build.sh -DLITE_VERSION='"'$VERSION-$PLATFORM-enhanced-allinone-$GIT_REV'"' -DLITE_ALL_IN_ONE $LUAJIT_CC && tar -czvf lite-xl-$VERSION-$PLATFORM-enhanced-allinone.tar.gz  lite-xl
           git reset master --hard && rm -f liblite.a && cp /tmp/normal-data.c src/data.c
-          ./build.sh -DLITE_VERSION='"'$VERSION-x86_64-linux-allinone-`git rev-parse --short HEAD`'"' -DLITE_ALL_IN_ONE && tar -czvf lite-xl-$VERSION-x86_64-linux-allinone.tar.gz lite-xl
-          ./build.sh -DLITE_VERSION='"'$VERSION-x86_64-linux-`git rev-parse --short HEAD`'"' && tar -czvf lite-xl-$VERSION-x86_64-linux.tar.gz lite-xl data
+          ./build.sh -DLITE_VERSION='"'$VERSION-$PLATFORM-$GIT_REV'"'                                                && tar -czvf lite-xl-$VERSION-$PLATFORM.tar.gz                    lite-xl data
+          ./build.sh -DLITE_VERSION='"'$VERSION-$PLATFORM-allinone-$GIT_REV'"' -DLITE_ALL_IN_ONE                     && tar -czvf lite-xl-$VERSION-$PLATFORM-allinone.tar.gz           lite-xl
       - name: Package Debian/Ubuntu
         env: { REV: "1", ARCH: "amd64", DESCRIPTION: "A lightweight and extensible text editor.", MAINTAINER: "Adam Harrison <adamdharrison@gmail.com>" }
         run: |
@@ -44,26 +49,24 @@ jobs:
           mkdir -p $NAME/usr/bin $NAME/usr/share/lite-xl $NAME/DEBIAN && cp lite-xl $NAME/usr/bin && cp -r data/* $NAME/usr/share/lite-xl
           printf "Package: lite-xl\nVersion: $VERSION\nArchitecture: $ARCH\nMaintainer: $MAINTAINER\nDescription: $DESCRIPTION\n" > $NAME/DEBIAN/control
           dpkg-deb --build --root-owner-group $NAME
-      - name: Build Windows
-        env: { CC: "x86_64-w64-mingw32-gcc", AR: "x86_64-w64-mingw32-gcc-ar", SDL_CONFIGURE: "--host=x86_64-w64-mingw32" }
+      - name: Build Windows (Regular/Enhanced + Normal/All-in-One)
+        env: { PLATFORM: "x86_64-windows", CC: "x86_64-w64-mingw32-gcc", AR: "x86_64-w64-mingw32-gcc-ar", SDL_CONFIGURE: "--host=x86_64-w64-mingw32" }
         run: |
-          rm -f lib/lite-xl-plugin-manager/lpm.x86_64-linux && cp lib/lite-xl-plugin-manager/lpm.x86_64-windows.exe data/plugins/plugin_manager
-          ./build.sh clean
-          ./build.sh -DLITE_VERSION='"'$VERSION-x86_64-windows-`git rev-parse --short HEAD`'"' && zip -r lite-xl-$VERSION-x86_64-windows.zip lite-xl.exe data
-          ./build.sh -DLITE_VERSION='"'$VERSION-x86_64-windows-allinone-`git rev-parse --short HEAD`'"' -DLITE_ALL_IN_ONE && zip -r lite-xl-$VERSION-x86_64-windows-allinone.zip lite-xl.exe
-          
+          rm -f lib/lite-xl-plugin-manager/lpm.* && cp lib/lite-xl-plugin-manager/lpm.$PLATFORM.exe data/plugins/plugin_manager && ./build.sh clean
+          cd lib/LuaJIT && make clean && make HOST_CC="gcc -m64" CROSS=x86_64-w64-mingw32- TARGET_SYS=Windows BUILDMODE=static && cd ../..
+          # We begin with the normal version, because we last used it in the previous step.
+          ./build.sh -DLITE_VERSION='"'$VERSION-$PLATFORM-$GIT_REV'"'                                                && zip -r lite-xl-$VERSION-$PLATFORM.zip                          lite-xl.exe data
+          ./build.sh -DLITE_VERSION='"'$VERSION-$PLATFORM-allinone-$GIT_REV'"' -DLITE_ALL_IN_ONE                     && zip -r lite-xl-$VERSION-$PLATFORM-allinone.zip                 lite-xl.exe
           git merge $ENHANCED_BRANCHES --no-commit && cp /tmp/enhanced-data.c src/data.c && rm -f liblite.a
-          cd LuaJIT && make clean && make HOST_CC="gcc -m64" CROSS=x86_64-w64-mingw32- TARGET_SYS=Windows BUILDMODE=static && cd ..
-          ./build.sh -LLuaJIT/src -lluajit -ILuaJIT/src -DLITE_VERSION='"'$VERSION-x86_64-windows-enhanced-`git rev-parse --short HEAD`'"' && zip -r lite-xl-$VERSION-x86_64-windows-enhanced.zip lite-xl.exe data
-          ./build.sh -LLuaJIT/src -lluajit -ILuaJIT/src -DLITE_VERSION='"'$VERSION-x86_64-windows-enhanced-allinone-`git rev-parse --short HEAD`'"' -DLITE_ALL_IN_ONE && zip -r lite-xl-$VERSION-x86_64-windows-enhanced-allinone.zip lite-xl.exe
-          rm -rf data/plugins/plugin_manager data/libraries
+          ./build.sh -DLITE_VERSION='"'$VERSION-$PLATFORM-enhanced-$GIT_REV'"' $LUAJIT_CC                            && zip -r lite-xl-$VERSION-$PLATFORM-enhanced.zip                 lite-xl.exe data
+          ./build.sh -DLITE_VERSION='"'$VERSION-$PLATFORM-enhanced-allinone-$GIT_REV'"' -DLITE_ALL_IN_ONE $LUAJIT_CC && zip -r lite-xl-$VERSION-$PLATFORM-enhanced-allinone.zip        lite-xl.exe
       - name: Create Release
         env: { GITHUB_TOKEN: "${{ github.token }}" }
         run: gh release delete -y continuous || true; gh release create -t 'Continuous Release' continuous *.zip *.tar.gz *.deb
       - name: Build Emscripten
         run: |
-          git clone https://github.com/emscripten-core/emsdk.git --depth=1 && cd emsdk && ./emsdk install latest && ./emsdk activate latest && source ./emsdk_env.sh && cd ..
-          rm -f src/data.c && ./build.sh clean && AR=emar CC=emcc ./build.sh -DLITE_VERSION='"'$VERSION-wasm-`git rev-parse --short HEAD`'"' -I`$EMSDK/upstream/emscripten/system/bin/sdl2-config --cflags` `$EMSDK/upstream/emscripten/system/bin/sdl2-config --libs` -o index.html -s ASYNCIFY -s USE_SDL=2 -s ASYNCIFY_WHITELIST="['main','SDL_WaitEvent','SDL_WaitEventTimeout','SDL_Delay','Emscripten_GLES_SwapWindow','SDL_UpdateWindowSurfaceRects','f_call','luaD_callnoyield','luaV_execute','luaD_precall','precallC','luaD_call','f_sleep','Emscripten_UpdateWindowFramebuffer','luaC_freeallobjects','GCTM','luaD_rawrunprotected','lua_close','close_state','f_end_frame','rencache_end_frame','ren_update_rects','renwin_update_rects','lua_pcallk','luaB_xpcall','dynCall_vii','f_wait_event']"  --preload-file data --preload-file src -s INITIAL_MEMORY=33554432 -s DISABLE_EXCEPTION_CATCHING=1 -s ALLOW_MEMORY_GROWTH=1 --shell-file resources/lite-xl.html
+          git clone https://github.com/emscripten-core/emsdk.git --depth=1 && cd emsdk && ./emsdk install latest && ./emsdk activate latest && source ./emsdk_env.sh && cd .. && rm -f data/plugins/plugin_manager data/libraries src/data.c
+          ./build.sh clean && AR=emar CC=emcc ./build.sh -DLITE_VERSION='"'$VERSION-wasm-$GIT_REV'"' -I`$EMSDK/upstream/emscripten/system/bin/sdl2-config --cflags` `$EMSDK/upstream/emscripten/system/bin/sdl2-config --libs` -o index.html -s ASYNCIFY -s USE_SDL=2 -s ASYNCIFY_WHITELIST="['main','SDL_WaitEvent','SDL_WaitEventTimeout','SDL_Delay','Emscripten_GLES_SwapWindow','SDL_UpdateWindowSurfaceRects','f_call','luaD_callnoyield','luaV_execute','luaD_precall','precallC','luaD_call','f_sleep','Emscripten_UpdateWindowFramebuffer','luaC_freeallobjects','GCTM','luaD_rawrunprotected','lua_close','close_state','f_end_frame','rencache_end_frame','ren_update_rects','renwin_update_rects','lua_pcallk','luaB_xpcall','dynCall_vii','f_wait_event']"  --preload-file data --preload-file src -s INITIAL_MEMORY=33554432 -s DISABLE_EXCEPTION_CATCHING=1 -s ALLOW_MEMORY_GROWTH=1 --shell-file resources/lite-xl.html
       - name: Publish Github Pages
         run: |
           git branch -D gh-pages || true && git checkout --orphan gh-pages && git rm -rf . && touch .nojekyll 
