@@ -1,6 +1,6 @@
 name: CI
 on: { push: { branches: [master] } }
-env: { VERSION: "2.1.0", LPM_VERSION: "0.1", ENHANCED_BRANCHES: "c-tokenizer" }
+env: { VERSION: "2.1.0", LPM_VERSION: "0.1", ENHANCED_BRANCHES: "origin/c-tokenizer" }
 jobs:
   build:
     runs-on: ubuntu-latest
