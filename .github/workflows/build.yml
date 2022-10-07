@@ -1,6 +1,6 @@
 name: CI
 on: { push: { branches: [master] } }
-env: { VERSION: "2.1.0", LPM_VERSION: "0.1" }
+env: { VERSION: "2.1.0", LPM_VERSION: "0.1", ENHANCED_BRANCHES: "c-tokenizer" }
 jobs:
   build:
     runs-on: ubuntu-latest
@@ -25,7 +25,7 @@ jobs:
         run: gcc resources/pack.c -o pack-data && sudo apt-get install mingw-w64 libc6-dev-i386
       - name: Build Linux
         run: |
-          git checkout enhanced && ./pack-data data/* data/*/* data/*/*/* > src/data.c
+          git merge $ENHANCED_BRANCHES && ./pack-data data/* data/*/* data/*/*/* > src/data.c
           git clone https://github.com/LuaJIT/LuaJIT.git --depth=1 && cd LuaJIT && make BUILDMODE=static && cd ..
           cp lib/lite-xl-plugin-manager/lpm.x86_64-linux data/plugins/plugin_manager
           ./build.sh -LLuaJIT/src -lluajit -ILuaJIT/src -DLITE_VERSION='"'$VERSION-x86_64-linux-enhanced-`git rev-parse --short HEAD`'"' && tar -czvf lite-xl-$VERSION-x86_64-linux-enhanced.tar.gz lite-xl data
@@ -50,7 +50,7 @@ jobs:
           ./build.sh -DLITE_VERSION='"'$VERSION-x86_64-windows-`git rev-parse --short HEAD`'"' && zip -r lite-xl-$VERSION-x86_64-windows.zip lite-xl.exe data
           ./build.sh -DLITE_VERSION='"'$VERSION-x86_64-windows-allinone-`git rev-parse --short HEAD`'"' -DLITE_ALL_IN_ONE && zip -r lite-xl-$VERSION-x86_64-windows-allinone.zip lite-xl.exe
           
-          git checkout enhanced && ./pack-data data/* data/*/* data/*/*/* > src/data.c && rm -f liblite.a && ./pack-data data/* data/*/* data/*/*/* > src/data.c
+          git merge $ENHANCED_BRANCHES && ./pack-data data/* data/*/* data/*/*/* > src/data.c && rm -f liblite.a && ./pack-data data/* data/*/* data/*/*/* > src/data.c
           cd LuaJIT && make clean && make HOST_CC="gcc -m64" CROSS=x86_64-w64-mingw32- TARGET_SYS=Windows BUILDMODE=static && cd ..
           ./build.sh -LLuaJIT/src -lluajit -ILuaJIT/src -DLITE_VERSION='"'$VERSION-x86_64-windows-enhanced-`git rev-parse --short HEAD`'"' && zip -r lite-xl-$VERSION-x86_64-windows-enhanced.zip lite-xl.exe data
           ./build.sh -LLuaJIT/src -lluajit -ILuaJIT/src -DLITE_VERSION='"'$VERSION-x86_64-windows-enhanced-allinone-`git rev-parse --short HEAD`'"' -DLITE_ALL_IN_ONE && zip -r lite-xl-$VERSION-x86_64-windows-enhanced-allinone.zip lite-xl.exe
