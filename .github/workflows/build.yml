@@ -62,7 +62,7 @@ jobs:
           ./build.sh -DLITE_VERSION='"'$VERSION-$PLATFORM-enhanced-allinone-$GIT_REV'"' -DLITE_ALL_IN_ONE $LUAJIT_CC && zip -r lite-xl-$VERSION-$PLATFORM-enhanced-allinone.zip        lite-xl.exe
       - name: Create Release
         env: { GITHUB_TOKEN: "${{ github.token }}" }
-        run: gh release delete -y continuous || true; gh release create -t 'Continuous Release' continuous *.zip *.tar.gz *.deb
+        run: gh release delete -y continuous || true; gh release create -t 'Continuous Release' -n 'A continuous release of lite-xl. See the README for more details.' continuous  *.zip *.tar.gz *.deb
       - name: Build Emscripten
         run: |
           git clone https://github.com/emscripten-core/emsdk.git --depth=1 && cd emsdk && ./emsdk install latest && ./emsdk activate latest && source ./emsdk_env.sh && cd .. && rm -f data/plugins/plugin_manager data/libraries src/data.c
