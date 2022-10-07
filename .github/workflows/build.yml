@@ -10,6 +10,8 @@ jobs:
         uses: actions/checkout@v3
         with:
           fetch-depth: 0
+      - name: Setup Identity
+        run: git config --global user.name "Github Actions" && git config --global user.email "adamdharrison@gmail.com"
       - name: Clone Submodules
         run: git submodule update --init --depth=1
       - name: Pull Plugin Manager
@@ -65,5 +67,4 @@ jobs:
       - name: Publish Github Pages
         run: |
           git branch -D gh-pages || true && git checkout --orphan gh-pages && git rm -rf . && touch .nojekyll 
-          git config --global user.name "Github Actions" && git config --global user.email "adamdharrison@gmail.com"
           git add index* .nojekyll && git commit -m 'Automatic GH Commit' --author "Github Actions <>" && git push origin gh-pages -f
