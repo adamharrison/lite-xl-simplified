@@ -17,23 +17,24 @@ jobs:
       - name: Pull Plugin Manager
         run: |
           git clone https://github.com/adamharrison/lite-xl-plugin-manager.git lib/lite-xl-plugin-manager
-          mkdir data/libraries
-          cp lib/lite-xl-plugin-manager/plugins/json.lua data/libraries
-          cp -R lib/lite-xl-plugin-manager/plugins/plugin_manager data/plugins
+          mkdir data/libraries && cp lib/lite-xl-plugin-manager/plugins/json.lua data/libraries
           curl -L https://github.com/adamharrison/lite-xl-plugin-manager/releases/download/v$LPM_VERSION/lpm.x86_64-linux --output lib/lite-xl-plugin-manager/lpm.x86_64-linux
           curl -L https://github.com/adamharrison/lite-xl-plugin-manager/releases/download/v$LPM_VERSION/lpm.x86_64-windows.exe --output lib/lite-xl-plugin-manager/lpm.x86_64-windows.exe  
           chmod +x lib/lite-xl-plugin-manager/lpm.x86_64-linux lib/lite-xl-plugin-manager/lpm.x86_64-windows.exe
-      - name: Compile Utility & Install Modules
-        run: gcc resources/pack.c -o pack-data && sudo apt-get install mingw-w64 libc6-dev-i386
+      - name: Compile & Use Utility & Install Modules 
+        run: | 
+          sudo apt-get install mingw-w64 libc6-dev-i386
+          gcc resources/pack.c -o pack-data && ./pack-data data/* data/*/* data/*/*/* > /tmp/normal-data.c
+          git merge $ENHANCED_BRANCHES --no-commit && ./pack-data data/* data/*/* data/*/*/* > src/enhanced-data.c
+          cp -R lib/lite-xl-plugin-manager/plugins/plugin_manager data/plugins
       - name: Build Linux
         run: |
-          git merge $ENHANCED_BRANCHES --no-commit  && ./pack-data data/* data/*/* data/*/*/* > src/data.c
+          cp lib/lite-xl-plugin-manager/lpm.x86_64-linux data/plugins/plugin_manager && cp /tmp/enhanced-data.c src/data.c
           git clone https://github.com/LuaJIT/LuaJIT.git --depth=1 && cd LuaJIT && make BUILDMODE=static && cd ..
-          cp lib/lite-xl-plugin-manager/lpm.x86_64-linux data/plugins/plugin_manager
           ./build.sh -LLuaJIT/src -lluajit -ILuaJIT/src -DLITE_VERSION='"'$VERSION-x86_64-linux-enhanced-`git rev-parse --short HEAD`'"' && tar -czvf lite-xl-$VERSION-x86_64-linux-enhanced.tar.gz lite-xl data
           ./build.sh -LLuaJIT/src -lluajit -ILuaJIT/src -DLITE_VERSION='"'$VERSION-x86_64-linux-enhanced-allinone-`git rev-parse --short HEAD`'"' -DLITE_ALL_IN_ONE && tar -czvf lite-xl-$VERSION-x86_64-linux-enhanced-allinone.tar.gz lite-xl
 
-          git reset master --hard && ./pack-data data/* data/*/* data/*/*/* > src/data.c && rm -f liblite.a
+          git reset master --hard && rm -f liblite.a && cp /tmp/normal-data.c src/data.c
           ./build.sh -DLITE_VERSION='"'$VERSION-x86_64-linux-allinone-`git rev-parse --short HEAD`'"' -DLITE_ALL_IN_ONE && tar -czvf lite-xl-$VERSION-x86_64-linux-allinone.tar.gz lite-xl
           ./build.sh -DLITE_VERSION='"'$VERSION-x86_64-linux-`git rev-parse --short HEAD`'"' && tar -czvf lite-xl-$VERSION-x86_64-linux.tar.gz lite-xl data
       - name: Package Debian/Ubuntu
@@ -46,13 +47,12 @@ jobs:
       - name: Build Windows
         env: { CC: "x86_64-w64-mingw32-gcc", AR: "x86_64-w64-mingw32-gcc-ar", SDL_CONFIGURE: "--host=x86_64-w64-mingw32" }
         run: |
-          rm -f data/plugins/plugin_manager/lpm.x86_64-linux
-          cp lib/lite-xl-plugin-manager/lpm.x86_64-windows.exe data/plugins/plugin_manager
+          rm -f lib/lite-xl-plugin-manager/lpm.x86_64-linux && cp lib/lite-xl-plugin-manager/lpm.x86_64-windows.exe data/plugins/plugin_manager
           ./build.sh clean
           ./build.sh -DLITE_VERSION='"'$VERSION-x86_64-windows-`git rev-parse --short HEAD`'"' && zip -r lite-xl-$VERSION-x86_64-windows.zip lite-xl.exe data
           ./build.sh -DLITE_VERSION='"'$VERSION-x86_64-windows-allinone-`git rev-parse --short HEAD`'"' -DLITE_ALL_IN_ONE && zip -r lite-xl-$VERSION-x86_64-windows-allinone.zip lite-xl.exe
           
-          git merge $ENHANCED_BRANCHES --no-commit && ./pack-data data/* data/*/* data/*/*/* > src/data.c && rm -f liblite.a && ./pack-data data/* data/*/* data/*/*/* > src/data.c
+          git merge $ENHANCED_BRANCHES --no-commit && cp /tmp/enhanced-data.c src/data.c && rm -f liblite.a
           cd LuaJIT && make clean && make HOST_CC="gcc -m64" CROSS=x86_64-w64-mingw32- TARGET_SYS=Windows BUILDMODE=static && cd ..
           ./build.sh -LLuaJIT/src -lluajit -ILuaJIT/src -DLITE_VERSION='"'$VERSION-x86_64-windows-enhanced-`git rev-parse --short HEAD`'"' && zip -r lite-xl-$VERSION-x86_64-windows-enhanced.zip lite-xl.exe data
           ./build.sh -LLuaJIT/src -lluajit -ILuaJIT/src -DLITE_VERSION='"'$VERSION-x86_64-windows-enhanced-allinone-`git rev-parse --short HEAD`'"' -DLITE_ALL_IN_ONE && zip -r lite-xl-$VERSION-x86_64-windows-enhanced-allinone.zip lite-xl.exe
