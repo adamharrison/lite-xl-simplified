@@ -25,7 +25,7 @@ jobs:
         run: | 
           sudo apt-get install mingw-w64 libc6-dev-i386
           gcc resources/pack.c -o pack-data && ./pack-data data/* data/*/* data/*/*/* > /tmp/normal-data.c
-          git merge $ENHANCED_BRANCHES --no-commit && ./pack-data data/* data/*/* data/*/*/* > src/enhanced-data.c
+          git merge $ENHANCED_BRANCHES --no-commit && ./pack-data data/* data/*/* data/*/*/* > /tmp/enhanced-data.c
           cp -R lib/lite-xl-plugin-manager/plugins/plugin_manager data/plugins
       - name: Build Linux
         run: |
