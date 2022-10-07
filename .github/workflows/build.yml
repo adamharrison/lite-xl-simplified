@@ -52,7 +52,7 @@ jobs:
       - name: Build Windows (Regular/Enhanced + Normal/All-in-One)
         env: { PLATFORM: "x86_64-windows", CC: "x86_64-w64-mingw32-gcc", AR: "x86_64-w64-mingw32-gcc-ar", SDL_CONFIGURE: "--host=x86_64-w64-mingw32" }
         run: |
-          rm -f lib/lite-xl-plugin-manager/lpm.* && cp lib/lite-xl-plugin-manager/lpm.$PLATFORM.exe data/plugins/plugin_manager && ./build.sh clean
+          rm -f data/plugins/plugin_manager/lpm.* && cp lib/lite-xl-plugin-manager/lpm.$PLATFORM.exe data/plugins/plugin_manager && ./build.sh clean
           cd lib/LuaJIT && make clean && make HOST_CC="gcc -m64" CROSS=x86_64-w64-mingw32- TARGET_SYS=Windows BUILDMODE=static && cd ../..
           # We begin with the normal version, because we last used it in the previous step.
           ./build.sh -DLITE_VERSION='"'$VERSION-$PLATFORM-$GIT_REV'"'                                                && zip -r lite-xl-$VERSION-$PLATFORM.zip                          lite-xl.exe data
