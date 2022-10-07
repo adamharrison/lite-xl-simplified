@@ -25,6 +25,30 @@ int add_dirmonitor(struct dirmonitor_internal*, const char*);
 void remove_dirmonitor(struct dirmonitor_internal*, int);
 int get_mode_dirmonitor();
 
+#if !DIRMONITOR_BACKEND_WIN32 && !DIRMONITOR_BACKEND_INOTIFY && !DIRMONITOR_BACKEND_KQUEUE && !DIRMONITOR_BACKEND_DUMMY
+  #ifdef _WIN32
+    #define DIRMONITOR_BACKEND_WIN32 1
+  #elif __linux__
+    #define DIRMONITOR_BACKEND_INOTIFY 1
+  #elif __APPLE__ || __FreeBSD__
+    #define DIRMONITOR_BACKEND_KQUEUE 1
+  #else
+    #define DIRMONTOR_BACKEND_DUMMY 1
+  #endif
+#endif
+
+#ifdef DIRMONITOR_BACKEND_WIN32 
+  #include "dirmonitor/win32.c"
+#endif
+#ifdef DIRMONITOR_BACKEND_INOTIFY
+  #include "dirmonitor/inotify.c"
+#endif
+#ifdef DIRMONITOR_BACKEND_KQUEUE
+  #include "dirmonitor/kqueue.c"
+#endif
+#ifdef DIRMONITOR_BACKEND_DUMMY
+  #include "dirmonitor/dummy.c"
+#endif
 
 static int f_check_dir_callback(int watch_id, const char* path, void* L) {
   lua_pushvalue(L, -1);
