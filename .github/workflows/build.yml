@@ -51,7 +51,7 @@ jobs:
           ./build.sh -DLITE_VERSION='"'$VERSION-x86_64-win32-allinone-`git rev-parse --short HEAD`'"' -DLITE_ALL_IN_ONE && zip -r lite-xl-$VERSION-x86_64-win32-allinone.zip lite-xl.exe
           
           git checkout enhanced && ./pack-data data/* data/*/* data/*/*/* > src/data.c && rm -f liblite.a && ./pack-data data/* data/*/* data/*/*/* > src/data.c
-          cd LuaJIT && make clean && make HOST_CC="gcc -m32" CROSS=x86_64-w64-mingw32- TARGET_SYS=Windows BUILDMODE=static && cd ..
+          cd LuaJIT && make clean && make HOST_CC="gcc -m64" CROSS=x86_64-w64-mingw32- TARGET_SYS=Windows BUILDMODE=static && cd ..
           ./build.sh -LLuaJIT/src -lluajit -ILuaJIT/src -DLITE_VERSION='"'$VERSION-x86_64-win32-enhanced-`git rev-parse --short HEAD`'"' && zip -r lite-xl-$VERSION-x86_64-win32-enhanced.zip lite-xl.exe data
           ./build.sh -LLuaJIT/src -lluajit -ILuaJIT/src -DLITE_VERSION='"'$VERSION-x86_64-win32-enhanced-allinone-`git rev-parse --short HEAD`'"' -DLITE_ALL_IN_ONE && zip -r lite-xl-$VERSION-x86_64-win32-enhanced-allinone.zip lite-xl.exe
           rm -rf data/plugins/plugin_manager data/libraries
