@@ -43,6 +43,14 @@ If you desperately want better build times, you can speed up builds by specifyin
 `CC` variable (e.g. `CC='ccache gcc' ./build.sh`). After the first build, these builds should
 be quite quick (on my machine, building from scratch moves from 1 second to about .1 seconds).
 
+### LuaJIT
+
+Automatically compatible with luajit, just do:
+
+```
+./build.sh `pkg-config --cflags luajit` `pkg-config luajit --libs`
+```
+
 ### Cross Compiling
 
 If you are cross compiling, between each build, you should run `./build.sh clean`.
