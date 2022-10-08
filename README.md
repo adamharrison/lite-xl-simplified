@@ -108,6 +108,7 @@ This produces a standalone binary, that doesn't require any additional folders a
 * Anchorpoints for emscripten.
 * Added all-in-one build mode.
 * Compatibilty with luajit.
+* Auto-packaged with and compatibility with (`lpm`)[https://github.com/adamharrison/lite-xl-plugin-manager].
 
 ## Deviation from Lite XL for Enhanced Builds
 
