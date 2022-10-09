@@ -68,10 +68,10 @@ jobs:
             gh release create -t v$RELEASE v$RELEASE *.zip *.tar.gz *.deb
             git reset master --hard && git checkout master
             cat manifest.json | 
-              jq ".['lite-xls'][0].files[0].checksum = "'"'"`sha256sum lite-xl-$VERSION-x86_64-linux.tar.gz | sed 's/ .*//'`"'"' |
-              jq ".['lite-xls'][1].files[0].checksum = "'"'"`sha256sum lite-xl-$VERSION-x86_64-linux-enhanced.tar.gz | sed 's/ .*//'`"'"' |
-              jq ".['lite-xls'][0].files[1].checksum = "'"'"`sha256sum lite-xl-$VERSION-x86_64-windows.zip | sed 's/ .*//'`"'"'  |
-              jq ".['lite-xls'][1].files[1].checksum = "'"'"`sha256sum lite-xl-$VERSION-x86_64-windows-enhanced.zip | sed 's/ .*//'`"'"' > new-manifest.json
+              jq '.["lite-xls"][0].files[0].checksum = "'`echo "WAT"         | sed 's/ .*//'`'"'' |
+              jq '.["lite-xls"][1].files[0].checksum = "'`echo "WAT"| sed 's/ .*//'`'"'' |
+              jq '.["lite-xls"][0].files[1].checksum = "'`echo "WAT"           | sed 's/ .*//'`'"'' |
+              jq '.["lite-xls"][1].files[1].checksum = "'`echo "WAT" | sed 's/ .*//'`'"'' > new-manifest.json
             mv new-manifest.json manifest.json && git add manifest.json && git commit -m 'Updated manifest.json with updated release checksums.' && git push
           fi
       - name: Build Emscripten
