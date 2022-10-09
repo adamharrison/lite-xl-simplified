@@ -1,6 +1,6 @@
 name: CI
 on: { push: { branches: [master] } }
-env: { VERSION: "2.1.0-simplified", LPM_VERSION: "0.1", ENHANCED_BRANCHES: "origin/c-tokenizer", BINARY_PLUGINS: "plugin_manager", NORMAL_PLUGINS: "", LITE_USERDIR: "data" }
+env: { VERSION: "2.1.0-simplified", LPM_VERSION: "0.1", ENHANCED_BRANCHES: "origin/c-tokenizer", BINARY_PLUGINS: "plugin_manager", NORMAL_PLUGINS: "", LITE_USERDIR: "data", LPM_REPOS: "https://github.com/adamharrison/lite-xl-plugin-manager.git" }
 jobs:
   build:
     runs-on: ubuntu-latest
@@ -20,7 +20,6 @@ jobs:
       - name: Pull Plugin Manager
         run: |
           curl -L https://github.com/adamharrison/lite-xl-plugin-manager/releases/download/v$LPM_VERSION/lpm.x86_64-linux --output ./lpm && chmod +x ./lpm
-          ./lpm add https://github.com/adamharrison/lite-xl-plugin-manager.git
       - name: Install Modules & Pack Data
         run: | 
           sudo apt-get install mingw-w64 libc6-dev-i386 && gcc resources/pack.c -o pack-data 
@@ -32,7 +31,7 @@ jobs:
         env: { PLATFORM: "x86_64-linux" }
         run: |
           export GIT_REV=`git rev-parse --short HEAD`
-          [[ "$BINARY_PLUGINS" != "" ]] && ./lpm reinstall $BINARY_PLUGINS --arch=$PLATFORM && ./lpm purge && ./build.sh clean
+          [[ "$BINARY_PLUGINS" != "" ]] && ./lpm add $LPM_REPOS && ./lpm reinstall $BINARY_PLUGINS --arch=$PLATFORM && ./lpm purge && ./build.sh clean
           cp /tmp/enhanced-data.c src/data.c && cd lib/LuaJIT && make BUILDMODE=static && cd ../..
           # We begin with the enhanced version, because we merged it above, in the previous step.
           ./build.sh -DLITE_VERSION='"'$VERSION-$PLATFORM-enhanced-allinone-$GIT_REV'"' -DLITE_ALL_IN_ONE $LUAJIT_CC && tar -czvf lite-xl-$VERSION-$PLATFORM-enhanced-allinone.tar.gz  lite-xl
@@ -51,7 +50,7 @@ jobs:
         env: { PLATFORM: "x86_64-windows", CC: "x86_64-w64-mingw32-gcc", AR: "x86_64-w64-mingw32-gcc-ar", SDL_CONFIGURE: "--host=x86_64-w64-mingw32" }
         run: |
           export GIT_REV=`git rev-parse --short HEAD`
-          [[ "$BINARY_PLUGINS" != "" ]] && ./lpm reinstall $BINARY_PLUGINS --arch=$PLATFORM && ./lpm purge && ./build.sh clean
+          [[ "$BINARY_PLUGINS" != "" ]] && ./lpm add $LPM_REPOS && ./lpm reinstall $BINARY_PLUGINS --arch=$PLATFORM && ./lpm purge && ./build.sh clean
           cd lib/LuaJIT && make clean && make HOST_CC="gcc -m64" CROSS=x86_64-w64-mingw32- TARGET_SYS=Windows BUILDMODE=static && cd ../..
           # We begin with the normal version, because we last used it in the previous step.
           ./build.sh -DLITE_VERSION='"'$VERSION-$PLATFORM-allinone-$GIT_REV'"' -DLITE_ALL_IN_ONE                     && zip -r lite-xl-$VERSION-$PLATFORM-allinone.zip                 lite-xl.exe
