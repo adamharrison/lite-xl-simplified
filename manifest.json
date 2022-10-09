@@ -3,24 +3,46 @@
     {
       "version": "2.1-simplified",
       "mod_version": 3,
-      "files": [{
-        "arch": "x86_64-linux",
-        "url": "https://github.com/adamharrison/lite-xl-simplified/releases/download/v2.1/lite-xl-2.1.0-simplified-x86_64-linux.tar.gz"
-      }, {
-        "arch": "x86_64-windows",
-        "url": "https://github.com/adamharrison/lite-xl-simplified/releases/download/v2.1/lite-xl-2.1.0-simplified-x86_64-windows.zip"
-      }]
+      "files": [
+        {
+          "arch": "x86_64-linux",
+          "url": "https://github.com/adamharrison/lite-xl-simplified/releases/download/v2.1/lite-xl-2.1.0-simplified-x86_64-linux.tar.gz"
+        },
+        {
+          "arch": "x86_64-windows",
+          "url": "https://github.com/adamharrison/lite-xl-simplified/releases/download/v2.1/lite-xl-2.1.0-simplified-x86_64-windows.zip"
+        }
+      ]
     },
     {
       "version": "2.1-simplified-enhanced",
       "mod_version": 3,
-      "files": [{
-        "arch": "x86_64-linux",
-        "url": "https://github.com/adamharrison/lite-xl-simplified/releases/download/v2.1/lite-xl-2.1.0-simplified-x86_64-linux-enhanced.tar.gz"
-      }, {
-        "arch": "x86_64-windows",
-        "url": "https://github.com/adamharrison/lite-xl-simplified/releases/download/v2.1/lite-xl-2.1.0-simplified-x86_64-windows-enhanced.zip"
-      }]
+      "files": [
+        {
+          "arch": "x86_64-linux",
+          "url": "https://github.com/adamharrison/lite-xl-simplified/releases/download/v2.1/lite-xl-2.1.0-simplified-x86_64-linux-enhanced.tar.gz"
+        },
+        {
+          "arch": "x86_64-windows",
+          "url": "https://github.com/adamharrison/lite-xl-simplified/releases/download/v2.1/lite-xl-2.1.0-simplified-x86_64-windows-enhanced.zip"
+        }
+      ]
     }
-  ]
+  ],
+  "lite_xls": {
+    "files": [
+      {
+        "checksum": "21dc5fcda9f570766257803aa1b776aceff6cd6e08c4767ff59316aad35a783f"
+      },
+      {
+        "checksum": "8dedea8531ede8186ed13492825cc48dbe8392263bbb7d1c78caa61a8107f718"
+      },
+      {
+        "checksum": "64abaa8a3eda9d74cc1cdf879cb2d678cd68df4202faa8da49615e41884eb9ca"
+      },
+      {
+        "checksum": "eb1784c5a5368277e861844f1f82d46669ed5901cc91063f3f7642b1b54c4845"
+      }
+    ]
+  }
 }
