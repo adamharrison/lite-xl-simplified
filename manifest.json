@@ -28,21 +28,5 @@
         }
       ]
     }
-  ],
-  "lite_xls": {
-    "files": [
-      {
-        "checksum": "21dc5fcda9f570766257803aa1b776aceff6cd6e08c4767ff59316aad35a783f"
-      },
-      {
-        "checksum": "8dedea8531ede8186ed13492825cc48dbe8392263bbb7d1c78caa61a8107f718"
-      },
-      {
-        "checksum": "64abaa8a3eda9d74cc1cdf879cb2d678cd68df4202faa8da49615e41884eb9ca"
-      },
-      {
-        "checksum": "eb1784c5a5368277e861844f1f82d46669ed5901cc91063f3f7642b1b54c4845"
-      }
-    ]
-  }
+  ]
 }
