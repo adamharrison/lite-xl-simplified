@@ -55,7 +55,7 @@ static int f_check_dir_callback(int watch_id, const char* path, void* L) {
   if (path)
     lua_pushlstring(L, path, watch_id);
   else
-    lua_pushnumber(L, watch_id);
+    lua_pushinteger(L, watch_id);
   lua_call(L, 1, 1);
   int result = lua_toboolean(L, -1);
   lua_pop(L, 1);
@@ -108,7 +108,7 @@ static int f_dirmonitor_gc(lua_State* L) {
 
 static int f_dirmonitor_watch(lua_State *L) {
   struct dirmonitor* monitor = luaL_checkudata(L, 1, API_TYPE_DIRMONITOR);
-  lua_pushnumber(L, add_dirmonitor(monitor->internal, luaL_checkstring(L, 2)));
+  lua_pushinteger(L, add_dirmonitor(monitor->internal, luaL_checkstring(L, 2)));
   if (!monitor->thread)
     monitor->thread = SDL_CreateThread(dirmonitor_check_thread, "dirmonitor_check_thread", monitor);
   return 1;
