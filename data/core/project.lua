@@ -52,7 +52,6 @@ end
 
 function Project:normalize_path(filename)
   filename = common.normalize_path(filename)
-  if self.path == filename then return "" end
   if common.path_belongs_to(filename, self.path) then
     filename = common.relative_path(self.path, filename)
   end

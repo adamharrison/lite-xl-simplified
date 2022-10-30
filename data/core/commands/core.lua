@@ -105,7 +105,7 @@ command.add(nil, {
       local dirname, filename = view.doc.abs_filename:match("(.*)[/\\](.+)$")
       if dirname then
         dirname = core.normalize_to_project_dir(dirname)
-        text = dirname == core.project_dir and "" or common.home_encode(dirname) .. PATHSEP
+        text = dirname == core.projects[1].path and "" or common.home_encode(dirname) .. PATHSEP
       end
     end
     core.command_view:enter("Open File", {
@@ -115,7 +115,7 @@ command.add(nil, {
         core.root_view:open_doc(core.open_doc(filename))
       end,
       suggest = function (text)
-        return common.home_encode_list(common.path_suggest(common.home_expand(text), core.projects[1]))
+        return common.home_encode_list(common.path_suggest(common.home_expand(text), core.projects[1].path))
       end,
       validate = function(text)
         local filename = common.home_expand(text)

@@ -87,6 +87,7 @@ function TreeView:get_cached(project, path)
       expanded = (info.type == "dir" and #truncated <= 1) or self.expanded[path],
       depth = get_depth(truncated),
       abs_filename = path,
+      project = project,
       name = basename,
       type = info.type,
       project = project
@@ -693,7 +694,7 @@ command.add(
   ["treeview:delete"] = function(item)
     local filename = item.abs_filename
     local relfilename = item.filename
-    if item.dir_name ~= core.project_dir then
+    if item.project ~= core.projects[1] then
       -- add secondary project dirs names to the file path to show
       relfilename = common.basename(item.dir_name) .. PATHSEP .. relfilename
     end
@@ -748,7 +749,7 @@ command.add(function()
       submit = function(filename)
         local abs_filename = filename
         if not common.is_absolute_path(filename) then
-          abs_filename = item.dir_name .. PATHSEP .. filename
+          abs_filename = item.project.path .. PATHSEP .. filename
         end
         local res, err = os.rename(old_abs_filename, abs_filename)
         if res then -- successfully renamed
