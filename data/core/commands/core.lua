@@ -12,7 +12,7 @@ local function suggest_directory(text)
   text = common.home_expand(text)
   local basedir = common.dirname(core.projects[1].path)
   return common.home_encode_list((basedir and text == basedir .. PATHSEP or text == "") and
-    core.recent_projects or common.dir_path_suggest(text))
+    core.recent_projects or common.dir_path_suggest(text, core.projects[1].path))
 end
 
 local function check_directory_path(path)
@@ -115,27 +115,27 @@ command.add(nil, {
         core.root_view:open_doc(core.open_doc(filename))
       end,
       suggest = function (text)
-          return common.home_encode_list(common.path_suggest(common.home_expand(text)))
-        end,
+        return common.home_encode_list(common.path_suggest(common.home_expand(text), core.projects[1]))
+      end,
       validate = function(text)
-          local filename = common.home_expand(text)
-          local path_stat, err = system.get_file_info(filename)
-          if err then
-            if err:find("No such file", 1, true) then
-              -- check if the containing directory exists
-              local dirname = common.dirname(filename)
-              local dir_stat = dirname and system.get_file_info(dirname)
-              if not dirname or (dir_stat and dir_stat.type == 'dir') then
-                return true
-              end
+        local filename = common.home_expand(text)
+        local path_stat, err = system.get_file_info(filename)
+        if err then
+          if err:find("No such file", 1, true) then
+            -- check if the containing directory exists
+            local dirname = common.dirname(filename)
+            local dir_stat = dirname and system.get_file_info(dirname)
+            if not dirname or (dir_stat and dir_stat.type == 'dir') then
+              return true
             end
-            core.error("Cannot open file %s: %s", text, err)
-          elseif path_stat.type == 'dir' then
-            core.error("Cannot open %s, is a folder", text)
-          else
-            return true
           end
-        end,
+          core.error("Cannot open file %s: %s", text, err)
+        elseif path_stat.type == 'dir' then
+          core.error("Cannot open %s, is a folder", text)
+        else
+          return true
+        end
+      end,
     })
   end,
 

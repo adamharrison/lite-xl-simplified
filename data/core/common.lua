@@ -200,9 +200,9 @@ function common.path_suggest(text, root)
 end
 
 
-function common.dir_path_suggest(text)
+function common.dir_path_suggest(text, root)
   local path, name = text:match("^(.-)([^/\\]*)$")
-  local files = system.list_dir(path == "" and "." or path) or {}
+  local files = system.list_dir(path == "" and (root or ".") or path) or {}
   local res = {}
   for _, file in ipairs(files) do
     file = path .. file
