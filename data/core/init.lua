@@ -79,7 +79,6 @@ end
 
 function core.add_project(project)
   project = type(project) == "string" and Project.new(common.normalize_volume(project)) or project
-  if #core.projects == 0 then system.chdir(project.path) end
   table.insert(core.projects, project)
   core.redraw = true
   return project

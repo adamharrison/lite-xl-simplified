@@ -5,8 +5,29 @@ local core = require "core"
 local common = require "core.common"
 local config = require "core.config"
 
+-- inspect config.ignore_files patterns and prepare ready to use entries.
+local function compile_ignore_files()
+  local ipatterns = config.ignore_files
+  local compiled = {}
+  -- config.ignore_files could be a simple string...
+  if type(ipatterns) ~= "table" then ipatterns = {ipatterns} end
+  for i, pattern in ipairs(ipatterns) do
+    -- we ignore malformed pattern that raise an error
+    if pcall(string.match, "a", pattern) then
+      table.insert(compiled, {
+        use_path = pattern:match("/[^/$]"), -- contains a slash but not at the end
+        -- An '/' or '/$' at the end means we want to match a directory.
+        match_dir = pattern:match(".+/%$?$"), -- to be used as a boolen value
+        pattern = pattern -- get the actual pattern
+      })
+    end
+  end
+  return compiled
+end
+
+
 function Project.new(path)
-  return setmetatable({ path = path, name = common.basename(path) }, Project)
+  return setmetatable({ path = path, name = common.basename(path), compiled = compile_ignore_files() }, Project)
 end
 
 
@@ -38,26 +59,6 @@ function Project:normalize_path(filename)
 end
 
 
--- inspect config.ignore_files patterns and prepare ready to use entries.
-local function compile_ignore_files()
-  local ipatterns = config.ignore_files
-  local compiled = {}
-  -- config.ignore_files could be a simple string...
-  if type(ipatterns) ~= "table" then ipatterns = {ipatterns} end
-  for i, pattern in ipairs(ipatterns) do
-    -- we ignore malformed pattern that raise an error
-    if pcall(string.match, "a", pattern) then
-      table.insert(compiled, {
-        use_path = pattern:match("/[^/$]"), -- contains a slash but not at the end
-        -- An '/' or '/$' at the end means we want to match a directory.
-        match_dir = pattern:match(".+/%$?$"), -- to be used as a boolen value
-        pattern = pattern -- get the actual pattern
-      })
-    end
-  end
-  return compiled
-end
-
 
 local function fileinfo_pass_filter(info, ignore_compiled)
   if info.size >= config.file_size_limit * 1e6 then return false end
@@ -82,13 +83,13 @@ end
 
 -- compute a file's info entry completed with "filename" to be used
 -- in project scan or falsy if it shouldn't appear in the list.
-local function get_project_file_info(file, ignore_compiled)
-  local info = system.get_file_info(file)
+function Project:get_file_info(path)
+  local info = system.get_file_info(path)
   -- info can be not nil but info.type may be nil if is neither a file neither
   -- a directory, for example for /dev/* entries on linux.
   if info and info.type then
-    info.filename = file
-    return fileinfo_pass_filter(info, ignore_compiled) and info
+    info.filename = path
+    return fileinfo_pass_filter(info, self.compiled) and info
   end
 end
 
@@ -97,7 +98,7 @@ local function find_files_rec(project, path)
   local all = system.list_dir(path) or {}
   for _, file in ipairs(all) do
     local file = path .. PATHSEP .. file
-    local info = get_project_file_info(file, project.compiled)
+    local info = project:get_file_info(file)
     if info then
       info.filename = file
       if info.type == "file" then
@@ -110,11 +111,13 @@ local function find_files_rec(project, path)
 end
 
 
+
+
 function Project:files()
-  if not self.compiled then self.compiled = compile_ignore_files() end
   return coroutine.wrap(function()
     find_files_rec(self, self.path)
   end)
 end
+
 
 return Project

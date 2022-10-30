@@ -11,7 +11,6 @@ config.plugins.findfile = common.merge({
   max_search_time = 2.0
 }, config.plugins.findfile)
 
-local files
 
 command.add(nil, {
   ["core:find-file"] = function()

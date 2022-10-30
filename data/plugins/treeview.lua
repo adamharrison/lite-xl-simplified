@@ -14,7 +14,8 @@ local Dirwatch = require "core.dirwatch"
 config.plugins.treeview = common.merge({
   -- Default treeview width
   size = 200 * SCALE,
-  show_hidden = false
+  show_hidden = false,
+  show_ignored = true
 }, config.plugins.treeview)
 
 local tooltip_offset = style.font:get_height()
@@ -25,6 +26,7 @@ local tooltip_alpha_rate = 1
 
 
 local function get_depth(filename)
+  if filename == "" then return 0 end
   local n = 1
   for sep in filename:gmatch("[\\/]") do
     n = n + 1
@@ -46,6 +48,7 @@ function TreeView:new()
   self.visible = true
   self.init_size = true
   self.show_hidden = config.plugins.treeview.show_hidden
+  self.show_ignored = config.plugins.treeview.show_ignored
   self.target_size = config.plugins.treeview.size
   self.cache = {}
   self.expanded = {}
@@ -70,9 +73,14 @@ function TreeView:get_cached(project, path)
   local t = self.cache[path]
   if not t then
     if not self.watches[project] then self.watches[project] = Dirwatch.new() end
-    local truncated = path:sub(#project.path)
+    local truncated = path:sub(#project.path + 2)
     local basename = common.basename(path)
-    local info = system.get_file_info(path)
+    local info
+    if self.show_ignored then
+      info = system.get_file_info(path)
+    else
+      info = project:get_file_info(path)
+    end
     if not info then return nil end
     t = {
       filename = basename,
@@ -90,9 +98,15 @@ function TreeView:get_cached(project, path)
     t.files = {}
     for i, file in ipairs(system.list_dir(path)) do 
       local l = path .. PATHSEP .. file
-      local f = system.get_file_info(l)
-      if f.type then
+      local f
+      if self.show_ignored then
+        f = system.get_file_info(l)
+      else
+        f = project:get_file_info(l)
+      end
+      if f and f.type then
         f.name = file
+        f.abs_filename = l
         table.insert(t.files, f)
       end
       self.cache[l] = nil 
@@ -561,6 +575,11 @@ command.add(nil, {
     view.cache = {}
   end,
 
+  ["treeview:toggle-ignored"] = function()
+    view.show_ignored = not view.show_ignored
+    view.cache = {}
+  end,
+
   ["treeview:toggle-focus"] = function()
     if not core.active_view:is(TreeView) then
       if core.active_view:is(CommandView) then
@@ -833,6 +852,7 @@ command.add(function()
 keymap.add {
   ["ctrl+\\"]     = "treeview:toggle",
   ["ctrl+h"]      = "treeview:toggle-hidden",
+  ["ctrl+i"]      = "treeview:toggle-ignored",
   ["up"]          = "treeview:previous",
   ["down"]        = "treeview:next",
   ["left"]        = "treeview:collapse",
