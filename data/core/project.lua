@@ -41,7 +41,7 @@ end
 function Project:absolute_path(filename)
   if common.is_absolute_path(filename) then
     return common.normalize_path(filename)
-  elseif not self.path then
+  elseif not self or not self.path then
     local cwd = system.absolute_path(".")
     return cwd .. PATHSEP .. common.normalize_path(filename)
   else

@@ -159,8 +159,8 @@ function common.path_suggest(text, root)
     if path == "" then
       path = root or "."
       clean_dotslash = not root
-    else
-      path = (root or "") .. path
+    elseif root then
+      path = root .. PATHSEP .. path
     end
   end
 

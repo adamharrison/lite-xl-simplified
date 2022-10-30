@@ -401,7 +401,7 @@ function core.init()
   local project_dir_abs = system.absolute_path(project_dir)
   -- We prevent set_project below to effectively add and scan the directory because the
   -- project module and its ignore files is not yet loaded.
-  if pcall(core.set_project, project_dir_abs) then
+  if project_dir_abs and pcall(core.set_project, project_dir_abs) then
     got_project_error = not core.load_project_module()
     if project_dir_explicit then
       update_recents_project("add", project_dir_abs)
@@ -412,7 +412,7 @@ function core.init()
     end
     project_dir_abs = system.absolute_path(".")
     local status, err = pcall(core.set_project, project_dir_abs) 
-    if not err then
+    if status then
       got_project_error = not core.load_project_module()
     else
       system.show_fatal_error("Lite XL internal error", "cannot set project directory to cwd: " .. err)

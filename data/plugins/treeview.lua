@@ -742,7 +742,7 @@ command.add(function()
     return item ~= nil, item
   end, {
   ["treeview:rename"] = function(item)
-    local old_filename = item.filename
+    local old_filename = core.normalize_to_project_dir(item.abs_filename)
     local old_abs_filename = item.abs_filename
     core.command_view:enter("Rename", {
       text = old_filename,
@@ -766,7 +766,7 @@ command.add(function()
         end
       end,
       suggest = function(text)
-        return common.path_suggest(text, item.dir_name)
+        return common.path_suggest(text, core.projects[1].path)
       end
     })
   end,

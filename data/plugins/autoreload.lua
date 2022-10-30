@@ -26,7 +26,8 @@ local times = setmetatable({}, { __mode = "k" })
 local visible = setmetatable({}, { __mode = "k" })
 
 local function update_time(doc)
-  times[doc] = system.get_file_info(doc.filename).modified
+  local info = system.get_file_info(doc.filename)
+  times[doc] = info and info.modified
 end
 
 local function reload_doc(doc)
