@@ -4,11 +4,14 @@ local core = require "core"
 local command = require "core.command"
 local common = require "core.common"
 local config = require "core.config"
+local keymap = require "core.keymap"
 
 config.plugins.findfile = common.merge({
   file_limit = 20000,
   max_search_time = 2.0
 }, config.plugins.findfile)
+
+local files
 
 command.add(nil, {
   ["core:find-file"] = function()
@@ -22,7 +25,7 @@ command.add(nil, {
           local diff = system.get_time() - start
           if diff > 2 / config.fps then
             total = total + diff
-            if total > config.plugins.findfile.max_search_time then return end
+            if total > config.plugins.findfile.max_search_time then coroutine.yield() return end
             coroutine.yield(0.1)
             start = system.get_time()
           end
@@ -45,4 +48,8 @@ command.add(nil, {
       end
     })
   end
+})
+
+keymap.add({ 
+  [PLATFORM == "Mac OS X" and "cmd+p" or "ctrl+p"] = "core:find-file" 
 })

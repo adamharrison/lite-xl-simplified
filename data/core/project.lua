@@ -80,15 +80,10 @@ local function fileinfo_pass_filter(info, ignore_compiled)
 end
 
 
-local function compare_file(a, b)
-  return a.filename < b.filename
-end
-
-
 -- compute a file's info entry completed with "filename" to be used
 -- in project scan or falsy if it shouldn't appear in the list.
-local function get_project_file_info(root, file, ignore_compiled)
-  local info = system.get_file_info(root .. PATHSEP .. file)
+local function get_project_file_info(file, ignore_compiled)
+  local info = system.get_file_info(file)
   -- info can be not nil but info.type may be nil if is neither a file neither
   -- a directory, for example for /dev/* entries on linux.
   if info and info.type then
@@ -102,7 +97,7 @@ local function find_files_rec(project, path)
   local all = system.list_dir(path) or {}
   for _, file in ipairs(all) do
     local file = path .. PATHSEP .. file
-    local info = system.get_file_info(file)
+    local info = get_project_file_info(file, project.compiled)
     if info then
       info.filename = file
       if info.type == "file" then
@@ -116,6 +111,7 @@ end
 
 
 function Project:files()
+  if not self.compiled then self.compiled = compile_ignore_files() end
   return coroutine.wrap(function()
     find_files_rec(self, self.path)
   end)
