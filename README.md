@@ -33,6 +33,14 @@ Alternatively, you can supply your system libraries on the command line like so,
   `pkg-config lua5.4 freetype2 libpcre2-8 --libs` `sdl2-config --cflags` `sdl2-config --libs`.
 ```
 
+You can also build with a simple command, if you have all libraries:
+
+```
+gcc src/*.c src/api/*.c `pkg-config lua5.4 freetype2 libpcre2-8 --cflags`\
+  `pkg-config lua5.4 freetype2 libpcre2-8 --libs` `sdl2-config --cflags` `sdl2-config --libs` -lm -lz
+  -o lite-xl
+```
+
 ## Building
 
 ### Linux, Mac, Windows/MSYS, FreeBSD
