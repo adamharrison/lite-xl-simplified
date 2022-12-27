@@ -217,6 +217,8 @@ static void font_clear_glyph_cache(RenFont* font) {
 const char* retrieve_internal_file(const char* path, int* size);
 RenFont* ren_font_load(const char* path, float size, ERenFontAntialiasing antialiasing, ERenFontHinting hinting, unsigned char style) {
   FT_Face face = NULL;
+  int internal_size;
+  const char* internal_file = retrieve_internal_file(path, &internal_size);
   if (internal_file) {
     FT_Open_Args args = { FT_OPEN_MEMORY, internal_file, internal_size, (char*)path };
     if (FT_Open_Face( library, &args, 0, &face))
