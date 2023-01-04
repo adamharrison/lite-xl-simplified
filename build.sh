@@ -16,9 +16,9 @@ LDFLAGS=" $LDFLAGS -lm"
 # Compile SDL separately, because it's the only complicated module.
 if [[ "$@" != *"-lSDL"* && "$@" != *"-sUSE_SDL"* ]]; then
   [ ! -e "lib/SDL/include" ] && echo "Make sure you've cloned submodules. (git submodule update --init --depth=1)" && exit -1
-  [ ! -e "lib/SDL/build" ] && cd lib/SDL && mkdir -p build && cd build && CFLAGS="$LLFLAGS" CC=$CC ../configure $SDL_CONFIGURE --disable-audio --disable-joystick --disable-haptic --disable-sensor -- && make -j $JOBS && cd ../../..
-  LDFLAGS=" $LDFLAGS -Llib/SDL/build/build/.libs -l:libSDL2.a"
-  [[ $OSTYPE == 'msys'* || $CC == *'mingw'* ]] && LDFLAGS=" $LDFLAGS -lmingw32 -l:libSDL2main.a"
+  [ ! -e "lib/SDL/build" ] && cd lib/SDL && mkdir -p build && cd build && CFLAGS="$LLFLAGS" CC=$CC ../configure $SDL_CONFIGURE --disable-system-iconv --disable-shared --disable-audio --disable-joystick --disable-haptic --disable-sensor -- && make -j $JOBS && cd ../../..
+  LDFLAGS=" $LDFLAGS -Llib/SDL/build/build/.libs -lSDL2"
+  [[ $OSTYPE == 'msys'* || $CC == *'mingw'* ]] && LDFLAGS=" $LDFLAGS -lmingw32 -lSDL2main"
   CFLAGS=" $CFLAGS -Ilib/SDL/include"
 fi
 # Supporting library. Only compile bits that we're not linking explicitly against, allowing for system linking of libraries. set to -O3 -s if O or debugging not specified.
@@ -65,8 +65,8 @@ fi
 SRCS="src/*.c src/api/*.c"
 if [[ $OSTYPE == 'darwin'* ]]; then
   CFLAGS="$CFLAGS -DLITE_USE_SDL_RENDERER"
-  LDFLAGS="-Framework CoreServices -Framework Foundation $LDFLAGS"
-  SRCS=$SRCS src/*.m
+  LDFLAGS="-framework AppKit -framework Metal -framework Carbon -framework IOKit -framework CoreVideo -framework CoreServices -framework CoreGraphics -framework Foundation $LDFLAGS"
+  SRCS="$SRCS src/*.m"
 fi
 [[ $OSTYPE != 'msys'* && $CC != *'mingw'* && $CC != "emcc" ]] && LDFLAGS=" $LDFLAGS -ldl -pthread"
 [[ $OSTYPE == 'msys'* || $CC == *'mingw'* ]] && LDFLAGS="resources/icons/icon.res $LDFLAGS -lwinmm -lgdi32 -loleaut32 -lole32 -limm32 -lversion -lsetupapi -luuid -mwindows"
