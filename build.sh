@@ -7,7 +7,7 @@
 : ${JOBS=12}
 
 CFLAGS=" $CFLAGS $@ -Isrc -fno-strict-aliasing"
-LDFLAGS=" $LDFLAGS -lm -static-libgcc"
+LDFLAGS=" $LDFLAGS -lm"
 
 [[ "$@" == "clean" ]] && rm -rf lib/SDL/build liblite.a *.o index* $BIN && exit 0
 
@@ -65,7 +65,7 @@ fi
 SRCS="src/*.c src/api/*.c"
 if [[ $OSTYPE == 'darwin'* ]]; then
   CFLAGS="$CFLAGS -DLITE_USE_SDL_RENDERER"
-  LDFLAGS="$LDFLAGS -Framework CoreServices -Framework Foundation"
+  LDFLAGS="-Framework CoreServices -Framework Foundation $LDFLAGS"
   SRCS=$SRCS src/*.m
 fi
 [[ $OSTYPE != 'msys'* && $CC != *'mingw'* && $CC != "emcc" ]] && LDFLAGS=" $LDFLAGS -ldl -pthread"
