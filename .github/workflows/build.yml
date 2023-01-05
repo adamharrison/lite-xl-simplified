@@ -26,8 +26,7 @@ jobs:
       - name: Build Linux (Regular/Enhanced + Normal/All-in-One)
         env: { PLATFORM: "x86_64-linux" }
         run: |
-          export GIT_REV=`git rev-parse --short HEAD`
-          ./build.sh clean
+          export GIT_REV=`git rev-parse --short HEAD` && ./build.sh clean
           cp /tmp/enhanced-data.c src/data.c && cd lib/LuaJIT && make BUILDMODE=static && cd ../..
           # We begin with the enhanced version, because we merged it above, in the previous step.
           ./build.sh -DLITE_VERSION='"'$VERSION-$PLATFORM-enhanced-allinone-$GIT_REV'"' -DLITE_ALL_IN_ONE $LUAJIT_CC && tar -czvf lite-xl-$VERSION-$PLATFORM-enhanced-allinone.tar.gz  lite-xl
@@ -45,8 +44,8 @@ jobs:
       - name: Build Windows (Regular/Enhanced + Normal/All-in-One)
         env: { PLATFORM: "x86_64-windows", CC: "x86_64-w64-mingw32-gcc", AR: "x86_64-w64-mingw32-gcc-ar", SDL_CONFIGURE: "--host=x86_64-w64-mingw32" }
         run: |
-          export GIT_REV=`git rev-parse --short HEAD`
-          cd lib/LuaJIT && make clean && make HOST_CC="gcc -m64" CROSS=x86_64-w64-mingw32- TARGET_SYS=Windows BUILDMODE=static && cd ../..
+          export GIT_REV=`git rev-parse --short HEAD` && ./build.sh clean
+          cd lib/LuaJIT && make clean && make HOST_CC="gcc -m64" CROSS=x86_64-w64-mingw32- TARGET_SYS=Windows BUILDMODE=static && cd ../.. 
           # We begin with the normal version, because we last used it in the previous step.
           ./build.sh -DLITE_VERSION='"'$VERSION-$PLATFORM-allinone-$GIT_REV'"' -DLITE_ALL_IN_ONE                     && zip -r lite-xl-$VERSION-$PLATFORM-allinone.zip                 lite-xl.exe
           ./build.sh -DLITE_VERSION='"'$VERSION-$PLATFORM-$GIT_REV'"'                                                && zip -r lite-xl-$VERSION-$PLATFORM.zip                          lite-xl.exe data
