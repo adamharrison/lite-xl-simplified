@@ -1,6 +1,6 @@
 name: CI
 on: { push: { branches: [master] } }
-env: { VERSION: "2.1.0-simplified", ENHANCED_BRANCHES: "origin/c-tokenizer", LITE_USERDIR: "data" }
+env: { ENHANCED_BRANCHES: "origin/c-tokenizer" }
 jobs:
   build-linux-windows:
     runs-on: ubuntu-latest
@@ -13,6 +13,7 @@ jobs:
       - name: Setup Identity & Environment
         run: |
           git config --global user.name "Github Actions" && git config --global user.email "<>"
+          echo VERSION=`git describe --tags` >> $GITHUB_ENV
       - name: Clone Submodules
         run: |
           git submodule update --init --depth=1
@@ -49,7 +50,7 @@ jobs:
           # We begin with the normal version, because we last used it in the previous step.
           ./build.sh -DLITE_VERSION='"'$VERSION-$PLATFORM-allinone-$GIT_REV'"' -DLITE_ALL_IN_ONE                     && zip -r lite-xl-$VERSION-$PLATFORM-allinone.zip                 lite-xl.exe
           ./build.sh -DLITE_VERSION='"'$VERSION-$PLATFORM-$GIT_REV'"'                                                && zip -r lite-xl-$VERSION-$PLATFORM.zip                          lite-xl.exe data
-          git merge $ENHANCED_BRANCHES --no-    && cp /tmp/enhanced-data.c src/data.c && rm -f liblite.a
+          git merge $ENHANCED_BRANCHES --no--commit && cp /tmp/enhanced-data.c src/data.c && rm -f liblite.a
           ./build.sh -DLITE_VERSION='"'$VERSION-$PLATFORM-enhanced-allinone-$GIT_REV'"' -DLITE_ALL_IN_ONE $LUAJIT_CC && zip -r lite-xl-$VERSION-$PLATFORM-enhanced-allinone.zip        lite-xl.exe
           ./build.sh -DLITE_VERSION='"'$VERSION-$PLATFORM-enhanced-$GIT_REV'"' $LUAJIT_CC                            && zip -r lite-xl-$VERSION-$PLATFORM-enhanced.zip                 lite-xl.exe data
       - name: Create Release
@@ -72,6 +73,7 @@ jobs:
       - name: Setup Identity & Environment
         run: |
           git config --global user.name "Github Actions" && git config --global user.email "<>"
+          echo VERSION=`git describe --tags` >> $GITHUB_ENV
       - name: Clone Submodules
         run: |
           git submodule update --init --depth=1
