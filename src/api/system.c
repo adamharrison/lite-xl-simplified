@@ -561,7 +561,7 @@ static int f_show_fatal_error(lua_State *L) {
 }
 
 #if _WIN32
-static LPWSTR utfconv_utf8towc(const char *str) {
+LPWSTR utfconv_utf8towc(const char *str) {
   LPWSTR output;
   int len;
 
@@ -583,7 +583,7 @@ static LPWSTR utfconv_utf8towc(const char *str) {
   return output;
 }
 
-static char *utfconv_wctoutf8(LPCWSTR str) {
+char *utfconv_wctoutf8(LPCWSTR str) {
   char *output;
   int len;
 
