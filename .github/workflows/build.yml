@@ -35,13 +35,6 @@ jobs:
           git reset master --hard && rm -f liblite.a && cp /tmp/normal-data.c src/data.c
           ./build.sh -DLITE_VERSION='"'$VERSION-$PLATFORM-allinone'"' -DLITE_ALL_IN_ONE                     && tar -czvf lite-xl-$VERSION-$PLATFORM-allinone.tar.gz           lite-xl
           ./build.sh -DLITE_VERSION='"'$VERSION-$PLATFORM'"'                                                && tar -czvf lite-xl-$VERSION-$PLATFORM.tar.gz                    lite-xl data
-      #- name: Package Debian/Ubuntu
-      #  env: { REV: "1", ARCH: "amd64", DESCRIPTION: "A lightweight and extensible text editor.", MAINTAINER: "Adam Harrison <adamdharrison@gmail.com>" }
-      #  run: |
-      #    export NAME=lite-xl_$VERSION-$REV""_$ARCH
-      #    mkdir -p $NAME/usr/bin $NAME/usr/share/lite-xl $NAME/DEBIAN && cp lite-xl $NAME/usr/bin && cp -r data/* $NAME/usr/share/lite-xl
-      #    printf "Package: lite-xl\nVersion: $VERSION\nArchitecture: $ARCH\nMaintainer: $MAINTAINER\nDescription: $DESCRIPTION\n" > $NAME/DEBIAN/control
-      #    dpkg-deb --build --root-owner-group $NAME
       - name: Build Windows (Regular/Enhanced + Normal/All-in-One)
         env: { PLATFORM: "x86_64-windows", CC: "x86_64-w64-mingw32-gcc", AR: "x86_64-w64-mingw32-gcc-ar", SDL_CONFIGURE: "--host=x86_64-w64-mingw32" }
         run: |
@@ -50,13 +43,13 @@ jobs:
           # We begin with the normal version, because we last used it in the previous step.
           ./build.sh -DLITE_VERSION='"'$VERSION-$PLATFORM-allinone'"' -DLITE_ALL_IN_ONE                     && zip -r lite-xl-$VERSION-$PLATFORM-allinone.zip                 lite-xl.exe
           ./build.sh -DLITE_VERSION='"'$VERSION-$PLATFORM'"'                                                && zip -r lite-xl-$VERSION-$PLATFORM.zip                          lite-xl.exe data
-          git merge $ENHANCED_BRANCHES --no--commit && cp /tmp/enhanced-data.c src/data.c && rm -f liblite.a
+          git merge $ENHANCED_BRANCHES --no-commit && cp /tmp/enhanced-data.c src/data.c && rm -f liblite.a
           ./build.sh -DLITE_VERSION='"'$VERSION-$PLATFORM-enhanced-allinone'"' -DLITE_ALL_IN_ONE $LUAJIT_CC && zip -r lite-xl-$VERSION-$PLATFORM-enhanced-allinone.zip        lite-xl.exe
           ./build.sh -DLITE_VERSION='"'$VERSION-$PLATFORM-enhanced'"' $LUAJIT_CC                            && zip -r lite-xl-$VERSION-$PLATFORM-enhanced.zip                 lite-xl.exe data
       - name: Create Release
         env: { GITHUB_TOKEN: "${{ github.token }}" }
         run: |
-          gh release delete -y continuous || true; gh release create -t 'Continuous Release' -n 'A continuous release of lite-xl. See the README for more details.' continuous  *.zip *.tar.gz *.deb
+          gh release delete -y continuous || true; gh release create -t 'Continuous Release' -n 'A continuous release of lite-xl. See the README for more details.' continuous  *.zip *.tar.gz
           if [[ `git tag --points-at HEAD | head -c 1` == "v" ]]; then
             gh release delete -y $VERSION || true; 
             gh release create -t $VERSION $VERSION *.zip *.tar.gz *.deb
@@ -103,6 +96,4 @@ jobs:
           ./build.sh clean
           ./build.sh -DLITE_VERSION='"'$VERSION-$PLATFORM'"'                                                && tar -czvf lite-xl-$VERSION-$PLATFORM.tar.gz                    lite-xl data
           gh release upload continuous *.tar.gz
-          if [[ `git tag --points-at HEAD | head -c 1` == "v" ]]; then
-            gh release upload $VERSION *.tar.gz
-          fi
+          [[ `git tag --points-at HEAD | head -c 1` == "v" ]] && gh release upload $VERSION *.tar.gz
