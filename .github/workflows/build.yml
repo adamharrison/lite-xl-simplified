@@ -94,8 +94,9 @@ jobs:
         uses: actions/checkout@v3
         with: { fetch-depth: 0 }
       - name: Clone Submodules
-        run: git submodule update --init --depth=1
-        echo VERSION=`git describe --tags` >> $GITHUB_ENV
+        run: | 
+          git submodule update --init --depth=1
+          echo VERSION=`git describe --tags` >> $GITHUB_ENV
       - name: Build MacOS 
         env: { GITHUB_TOKEN: "${{ github.token }}", PLATFORM: "x86_64-darwin" }
         run: |
