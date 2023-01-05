@@ -18,7 +18,7 @@ int get_changes_dirmonitor(struct dirmonitor_internal* monitor, char* buffer, in
 }
 
 
-struct dirmonitor* init_dirmonitor() {
+struct dirmonitor_internal* init_dirmonitor() {
   return calloc(1, sizeof(struct dirmonitor_internal));
 }
 

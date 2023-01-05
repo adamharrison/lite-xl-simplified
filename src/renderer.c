@@ -10,7 +10,7 @@
 
 #ifdef _WIN32
 #include <windows.h>
-#include "utfconv.h"
+LPWSTR utfconv_utf8towc(const char *str);
 #endif
 
 #include "renderer.h"
@@ -217,6 +217,11 @@ static void font_clear_glyph_cache(RenFont* font) {
 const char* retrieve_internal_file(const char* path, int* size);
 RenFont* ren_font_load(RenWindow *window_renderer, const char* path, float size, ERenFontAntialiasing antialiasing, ERenFontHinting hinting, unsigned char style) {
   FT_Face face = NULL;
+#ifdef _WIN32
+  HANDLE file = INVALID_HANDLE_VALUE;
+  unsigned char *font_file = NULL;
+  wchar_t *wpath = NULL;
+#endif
   int internal_size;
   const char* internal_file = retrieve_internal_file(path, &internal_size);
   if (internal_file) {
@@ -226,11 +231,8 @@ RenFont* ren_font_load(RenWindow *window_renderer, const char* path, float size,
   } else {
 #ifdef _WIN32
 
-  HANDLE file = INVALID_HANDLE_VALUE;
   DWORD read;
   int font_file_len = 0;
-  unsigned char *font_file = NULL;
-  wchar_t *wpath = NULL;
 
   if ((wpath = utfconv_utf8towc(path)) == NULL)
     return NULL;
@@ -298,8 +300,10 @@ RenFont* ren_font_load(RenWindow *window_renderer, const char* path, float size,
 
 failure:
 #ifdef _WIN32
-  free(wpath);
-  free(font_file);
+  if (wpath)
+    free(wpath);
+  if (font_file)
+    free(font_file);
   if (file != INVALID_HANDLE_VALUE) CloseHandle(file);
 #endif
   if (face != NULL)
