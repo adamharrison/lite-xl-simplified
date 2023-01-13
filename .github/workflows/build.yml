@@ -70,7 +70,7 @@ jobs:
         run: |
           git submodule update --init --depth=1
       - name: Build Emscripten
-      env { PLATFORM: "wasm" }
+        env: { PLATFORM: "wasm" }
         run: |
           git clone https://github.com/emscripten-core/emsdk.git --depth=1 && cd emsdk && ./emsdk install latest && ./emsdk activate latest && source ./emsdk_env.sh && cd .. && rm -rf data/plugins/plugin_manager data/libraries src/data.c
           ./build.sh clean && AR=emar CC=emcc ./build.sh `$EMSDK/upstream/emscripten/system/bin/sdl2-config --cflags` `$EMSDK/upstream/emscripten/system/bin/sdl2-config --libs` -o index.html -s ASYNCIFY -s USE_SDL=2 -s --preload-file data -s INITIAL_MEMORY=33554432 -s DISABLE_EXCEPTION_CATCHING=1 -s ALLOW_MEMORY_GROWTH=1 --shell-file resources/lite-xl.html  -DLITE_ARCH_TUPLE='"'wasm'"' -DDIRMONITOR_BACKEND_DUMMY -DLITE_VERSION=""'"'$VERSION-$PLATFORM'"'""\
