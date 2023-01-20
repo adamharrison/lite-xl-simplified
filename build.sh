@@ -8,15 +8,19 @@
 
 CFLAGS=" $CFLAGS $@ -Isrc -fno-strict-aliasing"
 LDFLAGS=" $LDFLAGS -lm"
+SDL_CONFIGURE="$SDL_CONFIGURE --disable-system-iconv --disable-shared --disable-audio --disable-joystick --disable-haptic --disable-sensor"
 
-[[ "$@" == "clean" ]] && rm -rf lib/SDL/build liblite.a *.o index* $BIN && exit 0
+[[ "$@" == "clean" ]] && rm -rf lib/SDL/build lib/SDL/build-tmp liblite.a *.o index* $BIN && exit 0
 
 [[ $OSTYPE == 'msys'* || $CC == *'mingw'* ]] && CFLAGS="$CFLAGS -DNTDDI_VERSION=NTDDI_VISTA -D_WIN32_WINNT=_WIN32_WINNT_VISTA"
 
 # Compile SDL separately, because it's the only complicated module.
 if [[ "$@" != *"-lSDL"* && "$@" != *"USE_SDL"* ]]; then
   [ ! -e "lib/SDL/include" ] && echo "Make sure you've cloned submodules. (git submodule update --init --depth=1)" && exit -1
-  [ ! -e "lib/SDL/build" ] && cd lib/SDL && mkdir -p build && cd build && CFLAGS="$LLFLAGS" CC=$CC ../configure $SDL_CONFIGURE --disable-system-iconv --disable-shared --disable-audio --disable-joystick --disable-haptic --disable-sensor -- && make -j $JOBS && cd ../../..
+  if [ ! -e "lib/SDL/build" ]; then
+    echo "Building SDL2..." && cd lib/SDL && mkdir -p build-tmp && cd build-tmp && CFLAGS="$LLFLAGS" CC=$CC ../configure $SDL_CONFIGURE && make -j $JOBS && cd ../../.. && mv lib/SDL/build-tmp lib/SDL/build ||\
+      (echo "Error building SDL. If you have SDL installed manually, try running with ./build.sh $@ "'`sdl2-config --libs` `sdl2-config --cflags`' && exit -1)
+  fi
   LDFLAGS=" $LDFLAGS -Llib/SDL/build/build/.libs -lSDL2"
   [[ $OSTYPE == 'msys'* || $CC == *'mingw'* ]] && LDFLAGS=" $LDFLAGS -lmingw32 -lSDL2main"
   CFLAGS=" $CFLAGS -Ilib/SDL/include"
@@ -52,11 +56,11 @@ fi
 
 if [ ! -f $LNAME ] && { [ ! -z "$LLSRCS" ]; }; then
   echo "Building $LNAME... (Can take a moment, but only needs to be done once)"
-  for SRC in $LLSRCS; do 
+  for SRC in $LLSRCS; do
     ((i=i%JOBS)); ((i++==0)) && wait # Parallelize the build.
-    $CC -c $SRC $LLFLAGS &
+    echo "  CC    $SRC" && $CC -c $SRC $LLFLAGS &
   done
-  wait && $AR -r -s $LNAME *.o && rm -f *.o
+  wait && echo "  AR    $LNAME" && $AR -r -s $LNAME *.o && rm -f *.o || (rm -f *.o && echo "Error building liblite.a. If you have the underlying libraries installed, try running with ./build $@ "'`pkg-config --cflags freetype2 pcre2-8 lua5.4` `pkg-config --libs freetype2 pcre2-8 lua5.4`' & exit -1)
 fi
 [  ! -z "$LLSRCS" ] && LDFLAGS=" $LDFLAGS -L. -llite"
 
@@ -72,8 +76,8 @@ fi
 [[ $OSTYPE == 'msys'* || $CC == *'mingw'* ]] && LDFLAGS="resources/icons/icon.res $LDFLAGS -lwinmm -lgdi32 -loleaut32 -lole32 -limm32 -lversion -lsetupapi -luuid -mwindows"
 
 echo "Building $BIN..."
-for SRC in $SRCS; do 
+for SRC in $SRCS; do
   ((i=i%JOBS)); ((i++==0)) && wait # Parallelize the build.
-  $CC $SRC -c $CFLAGS -o $SRC.o &
+  [ -e 'lite-xl' ] || echo "  CC    $SRC" && $CC $SRC -c $CFLAGS -o $SRC.o &
 done
-wait && $CC src/*.o src/api/*.o -o $BIN $LDFLAGS $@ && rm -f src/*.o src/api/*.o && echo "Done."
+wait && [ -e 'lite-xl' ] || echo "  LD    lite-xl" && $CC src/*.o src/api/*.o -o $BIN $LDFLAGS $@ && rm -f src/*.o src/api/*.o && echo "Done." || (echo "Error building lite-xl." && exit -1)
