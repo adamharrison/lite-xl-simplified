@@ -19,7 +19,7 @@ if [[ "$@" != *"-lSDL"* && "$@" != *"USE_SDL"* ]]; then
   [ ! -e "lib/SDL/include" ] && echo "Make sure you've cloned submodules. (git submodule update --init --depth=1)" && exit -1
   if [ ! -e "lib/SDL/build" ]; then
     echo "Building SDL2..." && cd lib/SDL && mkdir -p build-tmp && cd build-tmp && CFLAGS="$LLFLAGS" CC=$CC ../configure $SDL_CONFIGURE && make -j $JOBS && cd ../../.. && mv lib/SDL/build-tmp lib/SDL/build ||\
-      (echo "Error building SDL. If you have SDL installed manually, try running with ./build.sh $@ "'`sdl2-config --libs` `sdl2-config --cflags`' && exit -1)
+      { echo "Error building SDL. If you have SDL installed manually, try running with ./build.sh $@ "'`sdl2-config --libs` `sdl2-config --cflags`' && exit -1; }
   fi
   LDFLAGS=" $LDFLAGS -Llib/SDL/build/build/.libs -lSDL2"
   [[ $OSTYPE == 'msys'* || $CC == *'mingw'* ]] && LDFLAGS=" $LDFLAGS -lmingw32 -lSDL2main"
@@ -60,7 +60,7 @@ if [ ! -f $LNAME ] && { [ ! -z "$LLSRCS" ]; }; then
     ((i=i%JOBS)); ((i++==0)) && wait # Parallelize the build.
     echo "  CC    $SRC" && $CC -c $SRC $LLFLAGS &
   done
-  wait && echo "  AR    $LNAME" && $AR -r -s $LNAME *.o && rm -f *.o || (rm -f *.o && echo "Error building liblite.a. If you have the underlying libraries installed, try running with ./build $@ "'`pkg-config --cflags freetype2 pcre2-8 lua5.4` `pkg-config --libs freetype2 pcre2-8 lua5.4`' & exit -1)
+  wait && echo "  AR    $LNAME" && $AR -r -s $LNAME *.o && rm -f *.o || { rm -f *.o && echo "Error building liblite.a. If you have the underlying libraries installed, try running with ./build $@ "'`pkg-config --cflags freetype2 pcre2-8 lua5.4` `pkg-config --libs freetype2 pcre2-8 lua5.4`' & exit -1; }
 fi
 [  ! -z "$LLSRCS" ] && LDFLAGS=" $LDFLAGS -L. -llite"
 
@@ -80,4 +80,4 @@ for SRC in $SRCS; do
   ((i=i%JOBS)); ((i++==0)) && wait # Parallelize the build.
   [ -e 'lite-xl' ] || echo "  CC    $SRC" && $CC $SRC -c $CFLAGS -o $SRC.o &
 done
-wait && [ -e 'lite-xl' ] || echo "  LD    lite-xl" && $CC src/*.o src/api/*.o -o $BIN $LDFLAGS $@ && rm -f src/*.o src/api/*.o && echo "Done." || (echo "Error building lite-xl." && exit -1)
+wait && [ -e 'lite-xl' ] || echo "  LD    lite-xl" && $CC src/*.o src/api/*.o -o $BIN $LDFLAGS $@ && rm -f src/*.o src/api/*.o && echo "Done." || { echo "Error building lite-xl." && exit -1; }
