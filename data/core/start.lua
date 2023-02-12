@@ -41,7 +41,7 @@ local searchers = package.searchers and "searchers" or "loaders"
 
 local function iterate_paths(paths, modname, callback)
   local s = 1
-  return function() 
+  return function()
     if s > #paths then return nil end
     local e = paths:find(";", s) or (#paths+1)
     local module_path = modname:gsub("%.", "/")
@@ -53,7 +53,7 @@ end
 
 
 loadstring = loadstring or load
-package[searchers] = { function (modname) 
+package[searchers] = { function (modname)
   for path in iterate_paths(package.path, modname) do
     local internal_file = system.get_internal_file(path)
     if internal_file then return function() return loadstring(internal_file, path)() end, path end
