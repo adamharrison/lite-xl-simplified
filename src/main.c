@@ -117,6 +117,8 @@ static void init_window_icon(void) {
 
   #if _WIN32
     #define ARCH_PLATFORM "windows"
+  #elif __ANDROID__
+    #define ARCH_PLATFORM "android"
   #elif __linux__
     #define ARCH_PLATFORM "linux"
   #elif __FreeBSD__
