@@ -2,6 +2,7 @@
 
 : ${CC=gcc}
 : ${AR=ar}
+: ${LD=$CC}
 : ${BIN=lite-xl}
 : ${LNAME=liblite.a}
 : ${JOBS=12}
@@ -15,7 +16,7 @@ SDL_CONFIGURE="$SDL_CONFIGURE --disable-system-iconv --disable-shared --disable-
 [[ $OSTYPE == 'msys'* || $CC == *'mingw'* ]] && CFLAGS="$CFLAGS -DNTDDI_VERSION=NTDDI_VISTA -D_WIN32_WINNT=_WIN32_WINNT_VISTA"
 
 # Compile SDL separately, because it's the only complicated module.
-if [[ "$@" != *"-lSDL"* && "$@" != *"USE_SDL"* ]]; then
+if [[ "$@" != *"-lSDL"* && "$@" != *"USE_SDL"* && "$@" != *"-DNO_SDL"* ]]; then
   [ ! -e "lib/SDL/include" ] && echo "Make sure you've cloned submodules. (git submodule update --init --depth=1)" && exit -1
   if [ ! -e "lib/SDL/build" ]; then
     echo "Building SDL2..." && cd lib/SDL && mkdir -p build-tmp && cd build-tmp && CFLAGS="$LLFLAGS" CC=$CC ../configure $SDL_CONFIGURE && make -j $JOBS && cd ../../.. && mv lib/SDL/build-tmp lib/SDL/build ||\
@@ -80,4 +81,5 @@ for SRC in $SRCS; do
   ((i=i%JOBS)); ((i++==0)) && wait # Parallelize the build.
   [ -e 'lite-xl' ] || echo "  CC    $SRC" && $CC $SRC -c $CFLAGS -o $SRC.o &
 done
-wait && [ -e 'lite-xl' ] || echo "  LD    lite-xl" && $CC src/*.o src/api/*.o -o $BIN $LDFLAGS $@ && rm -f src/*.o src/api/*.o && echo "Done." || { echo "Error building lite-xl." && exit -1; }
+wait && [[ -e 'lite-xl' || "$@" == *"-DNO_LINK"* ]] || { echo "  LD    lite-xl" && $LD src/*.o src/api/*.o -o $BIN $LDFLAGS $@ && rm -f src/*.o src/api/*.o && echo "Done." || { echo "Error building lite-xl." && exit -1; } }
+

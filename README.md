@@ -90,6 +90,17 @@ AR=emar CC=emcc ./build.sh `$EMSDK/upstream/emscripten/system/bin/sdl2-config --
   -s ASYNCIFY_WHITELIST="['main','SDL_WaitEvent','SDL_WaitEventTimeout','SDL_Delay','Emscripten_GLES_SwapWindow','SDL_UpdateWindowSurfaceRects','f_call','luaD_callnoyield','luaV_execute','luaD_precall','precallC','luaD_call','f_sleep','Emscripten_UpdateWindowFramebuffer','luaC_freeallobjects','GCTM','luaD_rawrunprotected','lua_close','close_state','f_end_frame','rencache_end_frame','ren_update_rects','renwin_update_rects','lua_pcallk','luaB_xpcall','dynCall_vii','f_wait_event']"
 ```
 
+#### Linux to Android Library
+
+Make sure you have `$ANDROID_NDK_HOME` set to the appropriate variable, and call the following to create a static library from the object files for Android.
+
+```
+  CC=$ANDROID_NDK_HOME/toolchains/llvm/prebuilt/linux-x86_64/bin/$ANDROID_ARCH-clang AR=$ANDROID_NDK_HOME/toolchains/llvm/prebuilt/linux-x86_64/bin/llvm-ar CFLAGS="-Ilib/SDL/include"\
+    ./build.sh -DNO_SDL -DNO_LINK && $ANDROID_NDK_HOME/toolchains/llvm/prebuilt/linux-x86_64/bin/llvm-ar -r liblite.a src/*.o src/api/*.o
+```
+
+This can be build as part of the [lite-xl-android](https://github.com/adamharrison/lite-xl-android) project; it is included in a shared library.
+
 ### Modes
 
 In additional to the normal mode of compilation, we also provide a number of different pieces of functionality. These can be mixed and matched.
