@@ -638,7 +638,7 @@ static int g_read(lua_State* L, int stream, int read_size) {
       uint8_t* buffer = luaL_prepbuffer(&b);
       length = read(self->child_pipes[stream][0], buffer, read_size < LUAL_BUFFERSIZE ? read_size : LUAL_BUFFERSIZE);
       if (length == 0 && !poll_process(self, WAIT_NONE))
-        return 0;
+        break;
       else if (length < 0 && (errno == EAGAIN || errno == EWOULDBLOCK))
         length = 0;
       if (length < 0) {
