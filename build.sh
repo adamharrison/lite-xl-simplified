@@ -79,7 +79,7 @@ fi
 echo "Building $BIN..."
 for SRC in $SRCS; do
   ((i=i%JOBS)); ((i++==0)) && wait # Parallelize the build.
-  [ -e 'lite-xl' ] || echo "  CC    $SRC" && $CC $SRC -c $CFLAGS -o $SRC.o &
+  [ -e $BIN ] || echo "  CC    $SRC" && $CC $SRC -c $CFLAGS -o $SRC.o &
 done
-wait && [[ -e 'lite-xl' || "$@" == *"-DNO_LINK"* ]] || { echo "  LD    lite-xl" && $LD src/*.o src/api/*.o -o $BIN $LDFLAGS $@ && rm -f src/*.o src/api/*.o && echo "Done." || { echo "Error building lite-xl." && exit -1; } }
+wait && [[ -e $BIN || "$@" == *"-DNO_LINK"* ]] || { echo "  LD    $BIN" && $LD src/*.o src/api/*.o -o $BIN $LDFLAGS $@ && rm -f src/*.o src/api/*.o && echo "Done." || { echo "Error building lite-xl." && exit -1; } }
 
