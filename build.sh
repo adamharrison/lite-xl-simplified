@@ -65,6 +65,12 @@ if [ ! -f $LNAME ] && { [ ! -z "$LLSRCS" ]; }; then
 fi
 [  ! -z "$LLSRCS" ] && LDFLAGS=" $LDFLAGS -L. -llite"
 
+# All-in-one-build support
+if [[ "$@" == *"-DLITE_ALL_IN_ONE"* ]]; then
+  : ${LOCAL_CC=gcc}
+  $LOCAL_CC resources/pack.c -o resources/packer && resources/packer data/* data/*/* data/*/*/* > src/data.c
+fi
+
 # Main executable; set to -O3 -s if O or debugging not specified.
 [[ " $CFLAGS " != *" -O"* ]] && [[ " $CFLAGS " != *" -g "* ]] && CFLAGS="$CFLAGS -O3" && LDFLAGS="$LDFLAGS -s"
 SRCS="src/*.c src/api/*.c"
