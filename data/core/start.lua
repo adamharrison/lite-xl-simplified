@@ -8,12 +8,6 @@ SCALE = tonumber(os.getenv("LITE_SCALE") or os.getenv("GDK_SCALE") or os.getenv(
 PATHSEP = package.config:sub(1, 1)
 
 EXEDIR = EXEFILE:match("^(.+)[/\\][^/\\]+$")
-if MACOS_RESOURCES then
-  DATADIR = MACOS_RESOURCES
-else
-  local prefix = os.getenv('LITE_PREFIX') or EXEDIR:match("^(.+)[/\\]bin$")
-  DATADIR = prefix and (prefix .. PATHSEP .. 'share' .. PATHSEP .. 'lite-xl') or (EXEDIR .. PATHSEP .. 'data')
-end
 USERDIR = (system.get_file_info(EXEDIR .. PATHSEP .. 'user') and (EXEDIR .. PATHSEP .. 'user'))
        or os.getenv("LITE_USERDIR")
        or ((os.getenv("XDG_CONFIG_HOME") and os.getenv("XDG_CONFIG_HOME") .. PATHSEP .. "lite-xl"))
@@ -24,7 +18,7 @@ package.path = DATADIR .. '/?/init.lua;' .. package.path
 package.path = USERDIR .. '/?.lua;' .. package.path
 package.path = USERDIR .. '/?/init.lua;' .. package.path
 
-local suffix = PLATFORM == "Mac OS X" and 'lib' or (PLATFORM == "Windows" and 'dll' or 'so')
+local suffix = PLATFORM == "Windows" and 'dll' or 'so'
 package.cpath =
   USERDIR .. '/?.' .. ARCH .. "." .. suffix .. ";" ..
   USERDIR .. '/?/init.' .. ARCH .. "." .. suffix .. ";" ..
@@ -51,17 +45,31 @@ local function iterate_paths(paths, modname, callback)
   end
 end
 
-
 loadstring = loadstring or load
 package[searchers] = { function (modname)
   for path in iterate_paths(package.path, modname) do
     local internal_file = system.get_internal_file(path)
-    if internal_file then return function() return loadstring(internal_file, path)() end, path end
+    if internal_file then
+      return function() return loadstring(internal_file, path)() end, path
+    end
   end
   return nil
 end, package[searchers][1], package[searchers][2], function(modname)
-  for path in iterate_paths(package.path, modname) do
-    if system.get_file_info(path) then return system.load_native_plugin, path end
+  for path in iterate_paths(package.cpath, modname) do
+      local internal_file = system.get_internal_file(path)
+      if internal_file then
+        return function()
+          local TMPDIR = USERDIR .. PATHSEP .. "shared_libraries"
+          if not system.get_file_info(TMPDIR) then system.mkdir(TMPDIR) end
+          local filename = path:match("[/\\]([^/\\]+)$")
+          local unpack_path = TMPDIR .. PATHSEP .. filename
+          local file = io.open(unpack_path, "wb")
+          file:write(internal_file)
+          file:close()
+          return system.load_native_plugin(modname, unpack_path)
+        end, path
+      end
+      if system.get_file_info(path) then return system.load_native_plugin, path end
   end
   return nil
 end }
