@@ -11,7 +11,7 @@ CFLAGS=" $CFLAGS $@ -Isrc -fno-strict-aliasing"
 LDFLAGS=" $LDFLAGS -lm"
 SDL_CONFIGURE="$SDL_CONFIGURE --disable-system-iconv --disable-shared --disable-audio --disable-joystick --disable-haptic --disable-sensor"
 
-[[ "$@" == "clean" ]] && rm -rf lib/SDL/build lib/SDL/build-tmp liblite.a *.o index* $BIN && exit 0
+[[ "$@" == "clean" ]] && rm -rf lib/SDL/build lib/SDL/build-tmp liblite.a *.o index* src/data.c $BIN && exit 0
 
 [[ $OSTYPE == 'msys'* || $CC == *'mingw'* ]] && CFLAGS="$CFLAGS -DNTDDI_VERSION=NTDDI_VISTA -D_WIN32_WINNT=_WIN32_WINNT_VISTA"
 
