@@ -690,7 +690,18 @@ static int f_list_dir(lua_State *L) {
   int files = 0;
   lua_newtable(L);
   for (int i = 0; internal_packed_files[i]; i += 3) {
-    if (strncmp(path, internal_packed_files[i], path_len) == 0 && !strstr(&internal_packed_files[i][path_len+1], "/")) {
+    #ifdef _WIN32
+    int matching_path = 1;
+    for (int j = 0; j < path_len; ++j) {
+      if (!(internal_packed_files[i][j] == '/' && path[j] == '\\') && path[j] != internal_packed_files[i][j]) {
+        matching_path = 0;
+        break;
+      }
+    }
+    #else
+    int matching_path = strncmp(path, internal_packed_files[i], path_len) == 0;
+    #endif
+    if (matching_path && !strstr(&internal_packed_files[i][path_len+1], "/")) {
       lua_pushstring(L, &internal_packed_files[i][path_len+1]);
       lua_rawseti(L, -2, ++files);
     }
