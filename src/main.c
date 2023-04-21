@@ -134,6 +134,10 @@ static void init_window_icon(void) {
   #define LITE_ARCH_TUPLE ARCH_PROCESSOR "-" ARCH_PLATFORM
 #endif
 
+#ifndef LITE_NAME
+  #define LITE_NAME "lite-xl"
+#endif
+
 int main(int argc, char **argv) {
 #ifdef _WIN32
   HINSTANCE lib = LoadLibrary("user32.dll");
@@ -225,6 +229,8 @@ init_lua:
   }
   lua_setglobal(L, "EXEFILE");
 
+  lua_pushliteral(L, LITE_NAME);
+  lua_setglobal(L, "NAME");
 
 #ifdef __APPLE__
   enable_momentum_scroll();
