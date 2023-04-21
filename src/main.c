@@ -249,11 +249,11 @@ init_lua:
     "  EXEDIR = EXEFILE:match('^(.*)" LITE_PATHSEP_PATTERN LITE_NONPATHSEP_PATTERN "$')\n"
     "  local prefix = os.getenv('LITE_PREFIX') or EXEFILE:match('^(.*)" LITE_PATHSEP_PATTERN "bin$')\n"
     #if LITE_ALL_IN_ONE
-    "  DATADIR = '%INTERNAL%/data'\n"
-    "  (loadstring or load)(system.get_internal_file(DATADIR .. '/core/start.lua'), 'data/core/start.lua')()\n"
+    "  DATADIR = '%INTERNAL%" LITE_PATHSEP_PATTERN "data'\n"
+    "  (loadstring or load)(system.get_internal_file(DATADIR .. '" LITE_PATHSEP_PATTERN "core" LITE_PATHSEP_PATTERN "start.lua'), 'data" LITE_PATHSEP_PATTERN "core" LITE_PATHSEP_PATTERN "start.lua')()\n"
     #else
-    "  DATADIR = MACOS_RESOURCES or (prefix and (prefix .. '/share/lite-xl') or (EXEDIR .. '/data'))\n"
-    "  dofile(DATADIR .. '/core/start.lua')\n"
+    "  DATADIR = MACOS_RESOURCES or (prefix and (prefix .. '" LITE_PATHSEP_PATTERN "share" LITE_PATHSEP_PATTERN "lite-xl') or (EXEDIR .. '" LITE_PATHSEP_PATTERN "data'))\n"
+    "  dofile(DATADIR .. '" LITE_PATHSEP_PATTERN "core" LITE_PATHSEP_PATTERN "start.lua')\n"
     #endif
     "  core = require(os.getenv('LITE_XL_RUNTIME') or 'core')\n"
     "  core.init()\n"
