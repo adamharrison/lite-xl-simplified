@@ -668,11 +668,24 @@ static int f_chdir(lua_State *L) {
   return 0;
 }
 
+static int compare_internal_path(const char* internal_path, const char* path, int n) {
+#ifdef _WIN32
+  for (int i = 0; i < n; ++i) {
+    if ((internal_path[i] != '/' || path[i] != '\\') && path[i] != internal_path[i])
+      return 0;
+  }
+  return 1;
+#else
+  return strncmp(internal_path, path, n) == 0;
+#endif
+}
+
 extern const char* internal_packed_files[];
 const char* retrieve_internal_file(const char* path, int* size) {
   #if LITE_ALL_IN_ONE
+    int length = strlen(path);
     for (int i = 0; internal_packed_files[i]; i += 3) {
-      if (strcmp(path, internal_packed_files[i]) == 0) {
+      if (compare_internal_path(internal_packed_files[i], path, length) && internal_packed_files[i][length] == 0) {
         if (size)
           *size = (int)(long int)internal_packed_files[i+2];
         return internal_packed_files[i+1];
@@ -690,18 +703,8 @@ static int f_list_dir(lua_State *L) {
   int files = 0;
   lua_newtable(L);
   for (int i = 0; internal_packed_files[i]; i += 3) {
-    #ifdef _WIN32
-    int matching_path = 1;
-    for (int j = 0; j < path_len; ++j) {
-      if (!(internal_packed_files[i][j] == '/' && path[j] == '\\') && path[j] != internal_packed_files[i][j]) {
-        matching_path = 0;
-        break;
-      }
-    }
-    #else
-    int matching_path = strncmp(path, internal_packed_files[i], path_len) == 0;
-    #endif
-    if (matching_path && !strstr(&internal_packed_files[i][path_len+1], "/")) {
+    int matching = compare_internal_path(internal_packed_files[i], path, path_len);
+    if (matching && !strstr(&internal_packed_files[i][path_len+1], "/")) {
       lua_pushstring(L, &internal_packed_files[i][path_len+1]);
       lua_rawseti(L, -2, ++files);
     }
