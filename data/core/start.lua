@@ -29,15 +29,6 @@ package.cpath =
   DATADIR .. '/?.' .. suffix .. ";" ..
   DATADIR .. '/?/init.' .. suffix .. ";"
 
-local PATH = os.getenv("PATH")
-if PATH and PLATFORM == "Android" then
-  package.cpath = package.cpath ..
-    PATH .. '/?.' .. ARCH .. "." .. suffix .. ";" ..
-    PATH .. '/?/init.' .. ARCH .. "." .. suffix .. ";" ..
-    PATH .. '/?.' .. suffix .. ";" ..
-    PATH .. '/?/init.' .. suffix .. ";"
-end
-
 package.native_plugins = {}
 local searchers = package.searchers and "searchers" or "loaders"
 
@@ -64,21 +55,26 @@ package[searchers] = { function (modname)
   end
   return nil
 end, package[searchers][1], package[searchers][2], function(modname)
-  for path in iterate_paths(package.cpath, modname) do
-      local internal_file = system.get_internal_file(path)
-      if internal_file then
-        return function()
-          local TMPDIR = USERDIR .. PATHSEP .. "shared_libraries"
-          if not system.get_file_info(TMPDIR) then system.mkdir(TMPDIR) end
-          local filename = path:match("[/\\]([^/\\]+)$")
-          local unpack_path = TMPDIR .. PATHSEP .. filename
-          local file = io.open(unpack_path, "wb")
-          file:write(internal_file)
-          file:close()
-          return system.load_native_plugin(modname, unpack_path)
-        end, path
-      end
-      if system.get_file_info(path) then return system.load_native_plugin, path end
+  if PLATFORM == "Android" then
+    local path = os.getenv("PATH") .. "/" .. modname:gsub("^.*%.", "") .. ".so"
+    if system.get_file_info(path) then return system.load_native_plugin, path end
+  else
+    for path in iterate_paths(package.cpath, modname) do
+        local internal_file = system.get_internal_file(path)
+        if internal_file then
+          return function()
+            local TMPDIR = USERDIR .. PATHSEP .. "shared_libraries"
+            if not system.get_file_info(TMPDIR) then system.mkdir(TMPDIR) end
+            local filename = path:match("[/\\]([^/\\]+)$")
+            local unpack_path = TMPDIR .. PATHSEP .. filename
+            local file = io.open(unpack_path, "wb")
+            file:write(internal_file)
+            file:close()
+            return system.load_native_plugin(modname, unpack_path)
+          end, path
+        end
+        if system.get_file_info(path) then return system.load_native_plugin, path end
+    end
   end
   return nil
 end }
