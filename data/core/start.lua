@@ -38,8 +38,8 @@ local function iterate_paths(paths, modname, callback)
   return function()
     if s > #paths then return nil end
     local e = paths:find(";", s) or (#paths+1)
-    local module_path = modname:gsub("%.", "/")
-    local path = paths:sub(s, e - 1):gsub("?", module_path)
+    local module_path = modname:gsub("%.", PATHSEP)
+    local path = paths:sub(s, e - 1):gsub("/", PATHSEP):gsub("?", module_path)
     s = e + 1
     return path
   end
