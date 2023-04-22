@@ -29,6 +29,15 @@ package.cpath =
   DATADIR .. '/?.' .. suffix .. ";" ..
   DATADIR .. '/?/init.' .. suffix .. ";"
 
+local PATH = os.getenv("PATH")
+if PATH and PLATFORM == "Android" then
+  package.cpath = package.cpath ..
+    PATH .. '/?.' .. ARCH .. "." .. suffix .. ";" ..
+    PATH .. '/?/init.' .. ARCH .. "." .. suffix .. ";" ..
+    PATH .. '/?.' .. suffix .. ";" ..
+    PATH .. '/?/init.' .. suffix .. ";"
+end
+
 package.native_plugins = {}
 local searchers = package.searchers and "searchers" or "loaders"
 
